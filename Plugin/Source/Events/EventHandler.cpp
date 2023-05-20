@@ -38,6 +38,7 @@ void EventHandler::RemoveHandler(const std::string &name, Handler *handler) {
   auto it = std::find(handlerList.begin(), handlerList.end(), handler);
   if (it == handlerList.end())
     return;
+  handlerList.erase(it);
 
   if (handlerList.empty()) {
     m_handler.erase(name);
