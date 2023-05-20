@@ -77,6 +77,29 @@ void XYPad::mouseDown(const juce::MouseEvent &e) {
       break;
     }
   }
+  if (e.getNumberOfClicks() == 2 && m_CurrentPoint) {
+    m_CurrentPoint->Parameters.Gain->ResetToDefault();
+    m_CurrentPoint->Parameters.Q->ResetToDefault();
+  }
+
+  if (e.getNumberOfClicks() == 2 && !m_CurrentPoint) {
+    for (auto &point : m_Points) {
+      if (!point.Active) {
+        m_CurrentPoint = &point;
+        m_TabbedComponent->setCurrentTabIndex(point.Index);
+        float widthPercent = getWidth() / 100.0;
+        if (x < widthPercent * 4) {
+          point.Parameters.Type->SetValueAndNotifyHost(1);
+        } else if (x > widthPercent * 96) {
+          point.Parameters.Type->SetValueAndNotifyHost(3);
+        } else {
+          point.Parameters.Type->SetValueAndNotifyHost(2);
+        }
+        mouseDrag(e);
+        break;
+      }
+    }
+  }
 }
 
 void XYPad::mouseDrag(const juce::MouseEvent &e) {

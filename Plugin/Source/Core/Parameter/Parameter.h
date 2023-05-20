@@ -38,6 +38,7 @@ public:
                                bool gestureIsStarting) override;
 
   void SetValueAndNotifyHost(float value);
+  void ResetToDefault();
 
   explicit operator bool() const { return m_value < 0.5; }
   explicit operator int() const { return (int)m_value; }

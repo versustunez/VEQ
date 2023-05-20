@@ -61,14 +61,16 @@ void FrequencyResponse::PrepareResponse() {
   mags.resize(getWidth());
 
   for (int i = 0; i < w; ++i) {
-    double mag = 1.0;
     auto freq = juce::mapToLog10(double(i) / (double)w, 20.0, 20000.0);
+    int activeBands = 1;
+    mags[i] = 0;
     for (auto band : bands) {
       if (!band.ApplyingFilter.IsBypassed()) {
-        mag *= band.ApplyingFilter.GetMagnitudeForFrequency(freq, sampleRate);
+        mags[i] += juce::Decibels::gainToDecibels(band.ApplyingFilter.GetMagnitudeForFrequency(freq, sampleRate));
+        activeBands++;
       }
     }
-    mags[i] = juce::Decibels::gainToDecibels(mag);
+    mags[i] /= activeBands;
   }
 
   m_ResponsePath.clear();
