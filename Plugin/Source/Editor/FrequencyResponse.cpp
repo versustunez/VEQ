@@ -40,8 +40,16 @@ FrequencyResponse::~FrequencyResponse() {
 }
 
 void FrequencyResponse::paint(juce::Graphics &g) {
-  g.setColour(juce::Colour::fromFloatRGBA(1.0f, 0.87f, 0.01, 1.0f));
-  g.strokePath(m_ResponsePath, juce::PathStrokeType(1.0f));
+  static std::array<juce::Colour, VSTProcessor::Bands> bandColors = {
+      juce::Colour(207, 77, 111),  juce::Colour(249, 111, 93),
+      juce::Colour(45, 216, 129),  juce::Colour(20, 83, 209),
+      juce::Colour(197, 216, 109), juce::Colour(92, 164, 169),
+      juce::Colour(191, 6, 3),     juce::Colour(131, 188, 255),
+  };
+  for (int i = 0; i < VSTProcessor::Bands; ++i) {
+    g.setColour(bandColors[i]);
+    g.strokePath(m_ResponsePaths[i], juce::PathStrokeType(0.3f));
+  }
 }
 
 void FrequencyResponse::resized() { PrepareResponse(); }
@@ -57,34 +65,35 @@ void FrequencyResponse::PrepareResponse() {
   auto &bands = instance->Processor->FilterBands;
   double sampleRate = Core::Config::get().sampleRate;
 
-  int w = getWidth();
-  mags.resize(getWidth());
-
-  for (int i = 0; i < w; ++i) {
-    auto freq = juce::mapToLog10(double(i) / (double)w, 20.0, 20000.0);
-    int activeBands = 1;
-    mags[i] = 0;
-    for (auto band : bands) {
-      if (!band.ApplyingFilter.IsBypassed()) {
-        mags[i] += juce::Decibels::gainToDecibels(band.ApplyingFilter.GetMagnitudeForFrequency(freq, sampleRate));
-        activeBands++;
-      }
-    }
-    mags[i] /= activeBands;
-  }
-
-  m_ResponsePath.clear();
-
   auto bounds = getLocalBounds();
   const double outputMin = bounds.getBottom();
   const double outputMax = bounds.getY();
   auto map = [outputMin, outputMax](double input) -> double {
-    return juce::jmap(input, -40.0, 40.0, outputMin, outputMax);
+    return juce::jmap(input, -30.0, 30.0, outputMin, outputMax);
   };
 
-  m_ResponsePath.startNewSubPath(bounds.getX(), map(mags[0]));
-  for (int i = 1; i < w; ++i) {
-    m_ResponsePath.lineTo(bounds.getX() + i, map(mags[i]));
+  int w = getWidth();
+  mags.resize(w);
+
+  for (int i = 0; i < VSTProcessor::Bands; ++i) {
+    auto &band = bands[i];
+    auto &path = m_ResponsePaths[i];
+    for (int j = 0; j < w; ++j) {
+      auto freq = juce::mapToLog10(double(j) / (double)w, 20.0, 20000.0);
+      if (!band.ApplyingFilter.IsBypassed()) {
+        mags[j] = juce::Decibels::gainToDecibels(
+            band.ApplyingFilter.GetMagnitudeForFrequency(freq, sampleRate));
+      } else {
+        break;
+      }
+    }
+    path.clear();
+    if (!band.ApplyingFilter.IsBypassed()) {
+      path.startNewSubPath(bounds.getX(), map(mags[0]));
+      for (int j = 1; j < w; ++j) {
+        path.lineTo(bounds.getX() + j, map(mags[j]));
+      }
+    }
   }
 }
 } // namespace VSTZ::Editor

@@ -3,6 +3,7 @@
 #include "BandListener.h"
 #include "GUI/Components/VComponent.h"
 #include "ParameterStruct.h"
+#include "PluginProcessor.h"
 
 namespace VSTZ::Editor {
 class FrequencyResponse : public GUI::VComponent, Events::Handler {
@@ -18,6 +19,6 @@ private:
 
 protected:
   InstanceID m_ID{};
-  juce::Path m_ResponsePath{};
+  std::array<juce::Path, VSTProcessor::Bands> m_ResponsePaths{};
 };
 } // namespace VSTZ::Editor
