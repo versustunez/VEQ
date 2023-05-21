@@ -9,4 +9,5 @@ add_sources(
         PluginProcessor.cpp
         Filter.cpp
         UI.cpp
+        Utils/UI.cpp
 )

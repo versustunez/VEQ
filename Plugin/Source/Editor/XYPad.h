@@ -52,12 +52,16 @@ public:
                       const juce::MouseWheelDetails &wheel) override;
 
 protected:
-  bool isMouseDown{false};
+  float GetScale();
+protected:
+  float m_Scale{6.0f};
   EQPoint *m_CurrentPoint{nullptr};
+  bool m_MouseUpdated{false};
 
   InstanceID m_ID{0};
   juce::TabbedComponent *m_TabbedComponent{nullptr};
   std::array<EQPoint, VSTProcessor::Bands> m_Points{};
   std::array<XYPadPointListener, VSTProcessor::Bands> m_PointListener{};
+
 };
 } // namespace VSTZ::Editor

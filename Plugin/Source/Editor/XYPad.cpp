@@ -1,6 +1,7 @@
 #include "XYPad.h"
 
 #include "Core/Instance.h"
+#include "Utils/UI.h"
 
 #include <FMT.h>
 
@@ -105,18 +106,21 @@ void XYPad::mouseDown(const juce::MouseEvent &e) {
 void XYPad::mouseDrag(const juce::MouseEvent &e) {
   float x = e.position.x;
   float y = e.position.y;
-  if (m_CurrentPoint) {
+  if (!m_MouseUpdated && m_CurrentPoint) {
     auto freq = (float)juce::mapToLog10(x / (double)getWidth(), 20.0, 20000.0);
-    float gain = juce::jmap(y, 0.0f, (float)getHeight(), 30.0f, -30.0f);
+    float gain = juce::jmap(y, 0.0f, (float)getHeight(), m_Scale, -m_Scale);
 
     m_CurrentPoint->Parameters.Frequency->SetValueAndNotifyHost(freq);
     m_CurrentPoint->Parameters.Gain->SetValueAndNotifyHost(gain);
   }
+  m_MouseUpdated = false;
 }
 
 void XYPad::mouseUp(const juce::MouseEvent &e) { m_CurrentPoint = nullptr; }
 
 void XYPad::UpdatePoint(int index) {
+  float scale = GetScale();
+
   m_Points[index].Active = m_Points[index].Parameters.Type->getInt() != 0;
   auto freq = (float)m_Points[index].Parameters.Frequency->getValue();
   auto gain = (float)m_Points[index].Parameters.Gain->getValue();
@@ -124,8 +128,29 @@ void XYPad::UpdatePoint(int index) {
   int xPos = juce::mapFromLog10(freq, 20.0f, 20000.0f) * getWidth();
 
   m_Points[index].X = xPos;
-  m_Points[index].Y = juce::jmap(gain, -30.0f, 30.0f, (float)getHeight(), 0.0f);
+  m_Points[index].Y = juce::jmap(gain, -scale, scale, (float)getHeight(), 0.0f);
+
+  if (scale != m_Scale && m_CurrentPoint) {
+    auto *mouseMain = juce::Desktop::getInstance().getMouseSource(0);
+    if (mouseMain) {
+      auto pos = mouseMain->getScreenPosition();
+      mouseMain->setScreenPosition(pos.withY(getScreenY() + m_Points[index].Y));
+      m_MouseUpdated = true;
+    }
+  }
+  m_Scale = scale;
   repaint();
+}
+float XYPad::GetScale() {
+  auto GetScale = [this](int index) {
+    return Utils::UI::ScaleData{m_Points[index].Parameters.Gain,
+                                m_Points[index].Parameters.Type};
+  };
+  std::array<Utils::UI::ScaleData, 8> params = {
+      GetScale(0), GetScale(1), GetScale(2), GetScale(3),
+      GetScale(4), GetScale(5), GetScale(6), GetScale(7),
+  };
+  return Utils::UI::GetDecibelScaleForArray(params.data(), params.size());
 }
 
 void XYPad::mouseWheelMove(const juce::MouseEvent &event,

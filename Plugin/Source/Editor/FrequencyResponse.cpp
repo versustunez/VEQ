@@ -3,6 +3,7 @@
 #include "Core/Config.h"
 #include "Core/Instance.h"
 #include "PluginProcessor.h"
+#include "Utils/UI.h"
 
 #include <FMT.h>
 
@@ -68,8 +69,17 @@ void FrequencyResponse::PrepareResponse() {
   auto bounds = getLocalBounds();
   const double outputMin = bounds.getBottom();
   const double outputMax = bounds.getY();
-  auto map = [outputMin, outputMax](double input) -> double {
-    return juce::jmap(input, -30.0, 30.0, outputMin, outputMax);
+
+  auto GetScale = [&bands](int index) {
+    return Utils::UI::ScaleData{bands[index].Gain, bands[index].Type};
+  };
+  std::array<Utils::UI::ScaleData, 8> params = {
+      GetScale(0), GetScale(1), GetScale(2), GetScale(3),
+      GetScale(4), GetScale(5), GetScale(6), GetScale(7),
+  };
+  const double scale = Utils::UI::GetDecibelScaleForArray(params.data(), params.size());
+  auto map = [outputMin, outputMax, scale](double input) -> double {
+    return juce::jmap(input, -scale, scale, outputMin, outputMax);
   };
 
   int w = getWidth();
