@@ -1,44 +1,58 @@
 #pragma once
 
+#include "TypeDefs.h"
+
+#include <JuceHeader.h>
+
 namespace VSTZ {
 class AutoGain {
 public:
-  void SetSampleRate(double sampleRate) {
-    m_SampleRate = sampleRate;
-    CalculateSmoothingFactor();
-  }
+  AutoGain();
+  void SetSampleRate(double sampleRate) { m_SampleRate = sampleRate; }
   double GetGain() { return m_Gain; }
-  double GetPreviousGain() { return m_PreviousGain; }
 
   template <typename T> void CalculateInputGain(juce::AudioBuffer<T> &buffer) {
-    m_InputGain = 0;
-    for (int i = 0; i < buffer.getNumChannels(); ++i)
-      m_InputGain += buffer.getRMSLevel(i, 0, buffer.getNumSamples());
+    auto *leftData = buffer.getReadPointer(0);
+    auto *rightData = buffer.getReadPointer(1);
+    for (int j = 0; j < buffer.getNumSamples(); ++j) {
+      m_In.Right[m_In.Index] = rightData[j];
+      m_In.Left[m_In.Index++] = leftData[j];
+      if (m_In.Index >= BufferSize) {
+        m_In.Index = 0;
+        m_InputGain = CalculateRMS(m_In);
+      }
+    }
   }
 
   template <typename T> void CalculateOutputGain(juce::AudioBuffer<T> &buffer) {
-    double outputGain = 0.0;
-    for (int i = 0; i < buffer.getNumChannels(); ++i)
-      outputGain += buffer.getRMSLevel(i, 0, buffer.getNumSamples());
-
-    double makeup = (outputGain > 0.0 && m_InputGain > 0.0)
-                        ? m_InputGain / outputGain
-                        : 1.0;
-    m_PreviousGain = m_Gain;
-    m_Gain = m_SmoothnessFactor * m_Gain + (1.0f - m_SmoothnessFactor) * makeup;
+    auto *leftData = buffer.getWritePointer(0);
+    auto *rightData = buffer.getWritePointer(1);
+    for (int j = 0; j < buffer.getNumSamples(); ++j) {
+      m_Out.Left[m_Out.Index] = leftData[j];
+      m_Out.Right[m_Out.Index++] = rightData[j];
+      if (m_Out.Index >= BufferSize) {
+        m_Out.Index = 0;
+        CalculateMakeupGain();
+      }
+    }
   }
 
 protected:
-  void CalculateSmoothingFactor() {
-    constexpr double desiredTimeConstant = 0.1 / 1000.0;
-    double numSamples = desiredTimeConstant * m_SampleRate;
-    m_SmoothnessFactor = std::exp(-1.0 / numSamples);
-  }
+  constexpr static size_t BufferSize{256};
+  struct RingBuffer {
+    double Left[BufferSize]{};
+    double Right[BufferSize]{};
+    uint32_t Index = 0;
+  };
+
+  void CalculateSmoothingFactor();
+  void CalculateMakeupGain();
+  static double CalculateRMS(RingBuffer &buffer) ;
 
 protected:
+  RingBuffer m_In, m_Out;
   double m_SampleRate{44100.0};
   double m_Gain{1.0};
-  double m_PreviousGain{1.0};
   double m_SmoothnessFactor{0.0};
   double m_InputGain{0.0};
 };

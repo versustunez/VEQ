@@ -82,10 +82,11 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   }
 
   if (useAutoGain) {
+    auto previousGain = autoGain.GetGain();
     autoGain.CalculateOutputGain(buffer);
     for (int i = 0; i < buffer.getNumChannels(); ++i)
-      buffer.applyGainRamp(i, 0, buffer.getNumSamples(),
-                           autoGain.GetPreviousGain(), autoGain.GetGain());
+      buffer.applyGainRamp(i, 0, buffer.getNumSamples(), previousGain,
+                           autoGain.GetGain());
   }
 
   for (int i = 0; i < buffer.getNumSamples(); ++i) {
