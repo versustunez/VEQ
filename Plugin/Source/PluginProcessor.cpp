@@ -41,34 +41,35 @@ VSTProcessor::VSTProcessor()
   }
 }
 
-void VSTProcessor::processBlock(juce::AudioBuffer<float> &buffer,
-                                juce::MidiBuffer &) {
+template <typename T>
+static void ProcessBlock(juce::AudioBuffer<T> &buffer,
+                         VSTProcessor &processor) {
   juce::ScopedNoDenormals noDenormals;
-  for (int i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
+
+  for (int i = processor.getTotalNumInputChannels();
+       i < processor.getTotalNumOutputChannels(); ++i)
     buffer.clear(i, 0, buffer.getNumSamples());
-  if (m_Parameters.Bypass->getBool()) {
+
+  auto &parameters = processor.GetParameters();
+  if (parameters.Bypass->getBool())
     return;
-  }
 
-  auto mainBuffer = getBusBuffer(buffer, false, 0);
-  auto *dataLeft = mainBuffer.getReadPointer(0);
-  auto *dataRight = mainBuffer.getReadPointer(1);
-  auto *writeLeft = mainBuffer.getWritePointer(0);
-  auto *writeRight = mainBuffer.getWritePointer(1);
-
-  double inputGain = 0.0;
-  bool useAutoGain = m_Parameters.AutoGain->getBool();
+  auto *dataLeft = buffer.getReadPointer(0);
+  auto *dataRight = buffer.getReadPointer(1);
+  auto *writeLeft = buffer.getWritePointer(0);
+  auto *writeRight = buffer.getWritePointer(1);
+  auto &autoGain = processor.GetAutoGain();
+  bool useAutoGain = parameters.AutoGain->getBool();
 
   if (useAutoGain) {
-    for (int i = 0; i < buffer.getNumChannels(); ++i)
-      inputGain += buffer.getRMSLevel(i, 0, buffer.getNumSamples());
+    autoGain.CalculateInputGain(buffer);
   }
 
-  for (int i = 0; i < mainBuffer.getNumSamples(); ++i) {
+  for (int i = 0; i < buffer.getNumSamples(); ++i) {
     int active = 1;
     float dLeft = dataLeft[i];
     float dRight = dataRight[i];
-    for (auto &band : FilterBands) {
+    for (auto &band : processor.FilterBands) {
       auto &filter = band.ApplyingFilter;
       if (filter.IsBypassed())
         continue;
@@ -81,29 +82,28 @@ void VSTProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   }
 
   if (useAutoGain) {
-    double outputGain = 0.0;
+    autoGain.CalculateOutputGain(buffer);
     for (int i = 0; i < buffer.getNumChannels(); ++i)
-      outputGain += buffer.getRMSLevel(i, 0, buffer.getNumSamples());
-
-    auto makeup = (inputGain > 0.0) ? inputGain / outputGain : 1.0;
-    for (int i = 0; i < buffer.getNumChannels(); ++i)
-      buffer.applyGainRamp(i, 0, buffer.getNumSamples(), m_PreviousMakeup,
-                           makeup);
-    m_PreviousMakeup = makeup;
-  } else {
-    m_PreviousMakeup = 0.0f;
+      buffer.applyGainRamp(i, 0, buffer.getNumSamples(),
+                           autoGain.GetPreviousGain(), autoGain.GetGain());
   }
 
-  for (int i = 0; i < mainBuffer.getNumSamples(); ++i) {
-    instance->LeftFFT.PushSample(writeLeft[i]);
-    instance->RightFFT.PushSample(writeRight[i]);
+  for (int i = 0; i < buffer.getNumSamples(); ++i) {
+    processor.instance->LeftFFT.PushSample(writeLeft[i]);
+    processor.instance->RightFFT.PushSample(writeRight[i]);
   }
 
-  if (instance->LeftFFT.IsDirty()) {
-    auto *editor = dynamic_cast<VSTEditor *>(getActiveEditor());
+  if (processor.instance->LeftFFT.IsDirty()) {
+    auto *editor = dynamic_cast<VSTEditor *>(processor.getActiveEditor());
+    // @Note: This is triggering an async repaint of the editor.
     if (editor)
       editor->TriggerRepaint();
   }
+}
+
+void VSTProcessor::processBlock(juce::AudioBuffer<float> &buffer,
+                                juce::MidiBuffer &) {
+  ProcessBlock(buffer, *this);
 }
 
 juce::AudioProcessorEditor *VSTProcessor::createEditor() {
@@ -140,6 +140,7 @@ void VSTProcessor::prepareToPlay(double sampleRate, int) {
   if (config.sampleRate != sampleRate) {
     config.sampleRate = sampleRate;
   }
+  m_AutoGain.SetSampleRate(sampleRate);
   for (auto &band : FilterBands) {
     band.ApplyingFilter.SetSampleRate((float)sampleRate);
   }
@@ -155,6 +156,11 @@ bool VSTProcessor::isBusesLayoutSupported(
     return false;
 
   return layouts.getMainInputChannelSet() == layouts.getMainOutputChannelSet();
+}
+bool VSTProcessor::supportsDoublePrecisionProcessing() const { return true; }
+void VSTProcessor::processBlock(juce::AudioBuffer<double> &buffer,
+                                juce::MidiBuffer &) {
+  ProcessBlock(buffer, *this);
 }
 
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {

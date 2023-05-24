@@ -8,7 +8,7 @@
 namespace VSTZ::Editor {
 class Spectrum : public GUI::VComponent {
 public:
-  explicit Spectrum(InstanceID id, FFT *usingFFT) : m_ID(id), m_FFT(usingFFT){};
+  explicit Spectrum(InstanceID id, FFT *usingFFT) : m_ID(id), m_FFT(usingFFT){}
   void paint(juce::Graphics &g) override;
 
   void SetColor(float red, float green, float blue) {

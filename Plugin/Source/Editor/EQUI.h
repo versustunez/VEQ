@@ -13,7 +13,7 @@ class EQUI : public GUI::VComponent, Events::Handler {
 public:
   explicit EQUI(InstanceID id, int index = 1) : m_ID(id), m_Index(index) {
     Init();
-  };
+  }
   ~EQUI() override;
   void Init();
   void resized() override;

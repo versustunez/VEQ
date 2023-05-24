@@ -47,7 +47,7 @@ void FrequencyResponse::paint(juce::Graphics &g) {
       juce::Colour(197, 216, 109), juce::Colour(92, 164, 169),
       juce::Colour(191, 6, 3),     juce::Colour(131, 188, 255),
   };
-  for (int i = 0; i < VSTProcessor::Bands; ++i) {
+  for (size_t i = 0; i < VSTProcessor::Bands; ++i) {
     g.setColour(bandColors[i]);
     g.strokePath(m_ResponsePaths[i], juce::PathStrokeType(0.3f));
   }
@@ -77,13 +77,14 @@ void FrequencyResponse::PrepareResponse() {
       GetScale(0), GetScale(1), GetScale(2), GetScale(3),
       GetScale(4), GetScale(5), GetScale(6), GetScale(7),
   };
-  const double scale = Utils::UI::GetDecibelScaleForArray(params.data(), params.size());
+  const double scale =
+      Utils::UI::GetDecibelScaleForArray(params.data(), params.size());
   auto map = [outputMin, outputMax, scale](double input) -> double {
     return juce::jmap(input, -scale, scale, outputMin, outputMax);
   };
 
   int w = getWidth();
-  mags.resize(w);
+  mags.resize((size_t)w);
 
   for (int i = 0; i < VSTProcessor::Bands; ++i) {
     auto &band = bands[i];

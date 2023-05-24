@@ -21,7 +21,7 @@ protected:
 
 class UI : public GUI::VComponent {
 public:
-  explicit UI(InstanceID id) : m_ID(id) { Init(); };
+  explicit UI(InstanceID id) : m_ID(id) { Init(); }
   void Init();
   void resized() override;
   void paint(juce::Graphics &g) override;

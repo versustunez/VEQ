@@ -8,7 +8,7 @@
 namespace Memory {
 template <class T> class Weak {
 public:
-  static Weak<T> From(Ref<T> &ref) { return Weak<T>(ref.m_Instance); };
+  static Weak<T> From(Ref<T> &ref) { return Weak<T>(ref.m_Instance); }
 
   Ref<T> Lock() { return Ref<T>(m_Instance); }
 

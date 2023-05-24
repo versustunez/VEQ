@@ -22,8 +22,8 @@ public:
   void renderOpenGL() override;
   void openGLContextClosing() override;
 
-  void TriggerRepaint() { triggerAsyncUpdate(); };
-  void handleAsyncUpdate() override { repaint(); };
+  void TriggerRepaint() { triggerAsyncUpdate(); }
+  void handleAsyncUpdate() override { repaint(); }
 
 protected:
   std::string m_id;

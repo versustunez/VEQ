@@ -11,7 +11,7 @@ public:
   float *GetFFTData() { return m_FFTData; }
   constexpr static int GetFFTSize() { return FFTSize; }
   void ClearDirtyMark() { m_NextFFTBlockReady = false; }
-  [[nodiscard]] bool IsDirty() const { return m_NextFFTBlockReady; };
+  [[nodiscard]] bool IsDirty() const { return m_NextFFTBlockReady; }
   void ApplyFFT();
 
 protected:

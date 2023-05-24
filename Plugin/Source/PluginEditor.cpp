@@ -1,7 +1,9 @@
+#include "UI.h"
+
 #include <Core/Config.h>
 #include <Definitions.h>
-#include <PluginEditor.h>
 #include <JuceHeader.h>
+#include <PluginEditor.h>
 
 typedef VSTZ::Theme::Colors Colors;
 
@@ -44,7 +46,5 @@ void VSTEditor::setupGL(bool vsync) {
   m_openGLContext.makeActive();
 }
 void VSTEditor::newOpenGLContextCreated() {}
-void VSTEditor::renderOpenGL() {
-  m_UI->repaint();
-}
+void VSTEditor::renderOpenGL() { m_UI->repaint(); }
 void VSTEditor::openGLContextClosing() {}

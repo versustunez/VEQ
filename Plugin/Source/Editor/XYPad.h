@@ -43,7 +43,7 @@ public:
   void paint(juce::Graphics &g) override;
   void resized() override;
 
-  void UpdatePoint(int index);
+  void UpdatePoint(size_t index);
 
   void mouseDown(const juce::MouseEvent &e) override;
   void mouseDrag(const juce::MouseEvent &e) override;

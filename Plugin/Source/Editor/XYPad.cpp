@@ -16,7 +16,7 @@ XYPad::XYPad(VSTZ::InstanceID id) : m_ID(id) {
       juce::Colour(197, 216, 109), juce::Colour(92, 164, 169),
       juce::Colour(191, 6, 3),     juce::Colour(131, 188, 255),
   };
-  for (int i = 0; i < VSTProcessor::Bands; ++i) {
+  for (size_t i = 0; i < VSTProcessor::Bands; ++i) {
     m_Points[i].Index = i;
     m_Points[i].Color = bandColors[i];
     m_Points[i].Active = false;
@@ -41,7 +41,7 @@ XYPad::~XYPad() {
   auto *instance = Core::Instance::get(m_ID);
   if (!instance)
     return;
-  for (int i = 0; i < VSTProcessor::Bands; ++i) {
+  for (size_t i = 0; i < VSTProcessor::Bands; ++i) {
     instance->EventHandler.RemoveHandler(fmt::format("Band{}_type", i + 1),
                                          &m_PointListener[i]);
     instance->EventHandler.RemoveHandler(fmt::format("Band{}_freq", i + 1),
@@ -62,7 +62,7 @@ void XYPad::paint(juce::Graphics &g) {
 }
 
 void XYPad::resized() {
-  for (int i = 0; i < VSTProcessor::Bands; ++i) {
+  for (size_t i = 0; i < VSTProcessor::Bands; ++i) {
     UpdatePoint(i);
   }
 }
@@ -74,7 +74,7 @@ void XYPad::mouseDown(const juce::MouseEvent &e) {
     if (point.X - 5.0f <= x && x <= point.X + 5.0f && point.Y - 5.0f <= y &&
         y <= point.Y + 5.0f && point.Active) {
       m_CurrentPoint = &point;
-      m_TabbedComponent->setCurrentTabIndex(point.Index);
+      m_TabbedComponent->setCurrentTabIndex((int)point.Index);
       break;
     }
   }
@@ -87,8 +87,8 @@ void XYPad::mouseDown(const juce::MouseEvent &e) {
     for (auto &point : m_Points) {
       if (!point.Active) {
         m_CurrentPoint = &point;
-        m_TabbedComponent->setCurrentTabIndex(point.Index);
-        float widthPercent = getWidth() / 100.0;
+        m_TabbedComponent->setCurrentTabIndex((int)point.Index);
+        float widthPercent = (float)getWidth() / 100.0f;
         if (x < widthPercent * 4) {
           point.Parameters.Type->SetValueAndNotifyHost(1);
         } else if (x > widthPercent * 96) {
@@ -116,33 +116,37 @@ void XYPad::mouseDrag(const juce::MouseEvent &e) {
   m_MouseUpdated = false;
 }
 
-void XYPad::mouseUp(const juce::MouseEvent &e) { m_CurrentPoint = nullptr; }
+void XYPad::mouseUp(const juce::MouseEvent &) { m_CurrentPoint = nullptr; }
 
-void XYPad::UpdatePoint(int index) {
+void XYPad::UpdatePoint(size_t index) {
   float scale = GetScale();
+  if (scale != m_Scale) {
+    if (m_CurrentPoint) {
+      auto *mouseMain = juce::Desktop::getInstance().getMouseSource(0);
+      if (mouseMain) {
+        auto pos = mouseMain->getScreenPosition();
+        mouseMain->setScreenPosition(
+            pos.withY((float)getScreenY() + m_Points[index].Y));
+        m_MouseUpdated = true;
+      }
+    }
+    m_Scale = scale;
+    resized();
+    return;
+  }
 
   m_Points[index].Active = m_Points[index].Parameters.Type->getInt() != 0;
   auto freq = (float)m_Points[index].Parameters.Frequency->getValue();
   auto gain = (float)m_Points[index].Parameters.Gain->getValue();
 
-  int xPos = juce::mapFromLog10(freq, 20.0f, 20000.0f) * getWidth();
+  int xPos = int(juce::mapFromLog10(freq, 20.0f, 20000.0f) * (float)getWidth());
 
-  m_Points[index].X = xPos;
+  m_Points[index].X = (float)xPos;
   m_Points[index].Y = juce::jmap(gain, -scale, scale, (float)getHeight(), 0.0f);
-
-  if (scale != m_Scale && m_CurrentPoint) {
-    auto *mouseMain = juce::Desktop::getInstance().getMouseSource(0);
-    if (mouseMain) {
-      auto pos = mouseMain->getScreenPosition();
-      mouseMain->setScreenPosition(pos.withY(getScreenY() + m_Points[index].Y));
-      m_MouseUpdated = true;
-    }
-  }
-  m_Scale = scale;
   repaint();
 }
 float XYPad::GetScale() {
-  auto GetScale = [this](int index) {
+  auto GetScale = [this](size_t index) {
     return Utils::UI::ScaleData{m_Points[index].Parameters.Gain,
                                 m_Points[index].Parameters.Type};
   };
@@ -153,15 +157,15 @@ float XYPad::GetScale() {
   return Utils::UI::GetDecibelScaleForArray(params.data(), params.size());
 }
 
-void XYPad::mouseWheelMove(const juce::MouseEvent &event,
+void XYPad::mouseWheelMove(const juce::MouseEvent &,
                            const juce::MouseWheelDetails &wheel) {
   if (m_CurrentPoint) {
     m_CurrentPoint->Parameters.Q->SetValueAndNotifyHost(
-        m_CurrentPoint->Parameters.Q->getValue() + wheel.deltaY);
+        (float)m_CurrentPoint->Parameters.Q->getValue() + wheel.deltaY);
   }
 }
 
-void XYPadPointListener::Handle(Events::Event *event) {
+void XYPadPointListener::Handle(Events::Event *) {
   m_Pad->UpdatePoint(m_Point->Index);
 }
 } // namespace VSTZ::Editor

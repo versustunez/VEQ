@@ -39,7 +39,7 @@ public:
   void setDefaultValue(double defaultValue) {
     m_slider->setDoubleClickReturnValue(true, defaultValue);
   }
-  double getValue() { return m_slider->getValue(); };
+  double getValue() { return m_slider->getValue(); }
   void setTooltip(bool tooltip);
 
   juce::RangedAudioParameter* GetParameter() { return m_Parameter; }

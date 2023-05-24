@@ -8,7 +8,7 @@ namespace VSTZ {
 class BandListener : public Events::Handler {
 public:
   BandListener(Band *band)
-      : m_Band(band){};
+      : m_Band(band){}
 
   void Handle(Events::Event *event) override;
 

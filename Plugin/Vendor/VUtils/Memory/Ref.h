@@ -22,14 +22,14 @@ public:
   Ref(const Ref &other) {
     m_Instance = other.m_Instance;
     m_Instance->Count++;
-  };
+  }
 
   Ref(const Ref &&other) noexcept {
     m_Instance = other.m_Instance;
     m_Instance->Count++;
   }
 
-  ~Ref() { Reset(); };
+  ~Ref() { Reset(); }
 
   T *operator->() const { return m_Instance->Instance; }
 
@@ -74,14 +74,14 @@ public:
   explicit operator bool() { return m_Instance != nullptr; }
 
 private:
-  void Allocate(T *instance) { m_Instance = new RefContainer<T>(instance); };
+  void Allocate(T *instance) { m_Instance = new RefContainer<T>(instance); }
 
   void Free() {
     delete m_Instance->Instance;
     m_Instance->Instance = nullptr;
     if (m_Instance->WeakCount == 0)
       delete m_Instance;
-  };
+  }
 
 private:
   RefContainer<T> *m_Instance;
