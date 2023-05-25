@@ -20,10 +20,10 @@ void Filter::Reset() {
 }
 
 void Filter::SetFilterType(Filter::Type type) { m_Type = type; }
-void Filter::SetSampleRate(float sampleRate) { m_SampleRate = sampleRate; }
+void Filter::SetSampleRate(double sampleRate) { m_SampleRate = sampleRate; }
 
-float Filter::ApplyLeft(float in) {
-  float yL0 =
+double Filter::ApplyLeft(double in) {
+  double yL0 =
       (m_B0 * in + m_B1 * m_xL1 + m_B2 * m_xL2 - m_A1 * m_yL1 - m_A2 * m_yL2);
 
   m_xL2 = m_xL1;
@@ -34,8 +34,8 @@ float Filter::ApplyLeft(float in) {
 
   return yL0;
 }
-float Filter::ApplyRight(float in) {
-  float yR0 =
+double Filter::ApplyRight(double in) {
+  double yR0 =
       (m_B0 * in + m_B1 * m_xR1 + m_B2 * m_xR2 - m_A1 * m_yR1 - m_A2 * m_yR2);
 
   m_xR2 = m_xR1;
@@ -47,35 +47,35 @@ float Filter::ApplyRight(float in) {
   return yR0;
 }
 
-void Filter::CalculateCoefficients(float gain, float frequency, float q) {
-  float A = powf(10.0f, (gain / 20.0f));
-  float omega = (float)twoPi * frequency / m_SampleRate;
-  float tsin = sinf(omega);
-  float tcos = cosf(omega);
-  float beta = sqrtf(A + A);
+void Filter::CalculateCoefficients(double gain, double frequency, double q) {
+  double A = pow(10.0f, (gain / 20.0f));
+  double omega = (float)twoPi * frequency / m_SampleRate;
+  double tsin = sin(omega);
+  double tcos = cos(omega);
 
   switch (m_Type) {
   case Type::LowShelf: {
-    m_A0 = (A + 1.0f) + (A - 1.0f) * tcos + beta * tsin;
-    m_A1 = (-2.0f * ((A - 1.0f) + (A + 1.0f) * tcos)) / m_A0;
-    m_A2 = ((A + 1.0f) + (A - 1.0f) * tcos - beta * tsin) / m_A0;
+    double beta = sqrt(A + A) / q;
+    m_A0 = (A + 1.0) + (A - 1.0) * tcos + beta * tsin;
+    m_A1 = (-2.0 * ((A - 1.0) + (A + 1.0) * tcos)) / m_A0;
+    m_A2 = ((A + 1.0) + (A - 1.0) * tcos - beta * tsin) / m_A0;
 
-    m_B0 = (A * ((A + 1.0f) - (A - 1.0f) * tcos + beta * tsin)) / m_A0;
-    m_B1 = (2.0f * A * ((A - 1.0f) - (A + 1.0f) * tcos)) / m_A0;
-    m_B2 = (A * ((A + 1.0f) - (A - 1.0f) * tcos - beta * tsin)) / m_A0;
+    m_B0 = (A * ((A + 1.0) - (A - 1.0) * tcos + beta * tsin)) / m_A0;
+    m_B1 = (2.0 * A * ((A - 1.0) - (A + 1.0) * tcos)) / m_A0;
+    m_B2 = (A * ((A + 1.0) - (A - 1.0) * tcos - beta * tsin)) / m_A0;
   } break;
   case Type::HighShelf: {
-    m_A0 = (A + 1.0f) - (A - 1.0f) * tcos + beta * tsin;
-    m_A1 = (2.0f * ((A - 1.0f) - (A + 1.0f) * tcos)) / m_A0;
-    m_A2 = ((A + 1.0f) - (A - 1.0f) * tcos - beta * tsin) / m_A0;
+    double beta = sqrt(A + A) / q;
+    m_A0 = (A + 1.0) - (A - 1.0) * tcos + beta * tsin;
+    m_A1 = (2.0 * ((A - 1.0) - (A + 1.0) * tcos)) / m_A0;
+    m_A2 = ((A + 1.0) - (A - 1.0) * tcos - beta * tsin) / m_A0;
 
-    m_B0 = (A * ((A + 1.0f) + (A - 1.0f) * tcos + beta * tsin)) / m_A0;
-    m_B1 = (-2.0f * A * ((A - 1.0f) + (A + 1.0f) * tcos)) / m_A0;
-    m_B2 = (A * ((A + 1.0f) + (A - 1.0f) * tcos - beta * tsin)) / m_A0;
+    m_B0 = (A * ((A + 1.0) + (A - 1.0) * tcos + beta * tsin)) / m_A0;
+    m_B1 = (-2.0 * A * ((A - 1.0) + (A + 1.0) * tcos)) / m_A0;
+    m_B2 = (A * ((A + 1.0) + (A - 1.0) * tcos - beta * tsin)) / m_A0;
   } break;
   case Type::Peak: {
-    float alpha = tsin / (2.0f * q);
-
+    double alpha = tsin / (2.0 * q);
     m_A0 = (1.0f + alpha / A);
     m_A1 = (-2.0f * tcos) / m_A0;
     m_A2 = (1.0f - alpha / A) / m_A0;
@@ -87,16 +87,17 @@ void Filter::CalculateCoefficients(float gain, float frequency, float q) {
   default: Reset();
   }
 }
-double Filter::GetMagnitudeForFrequency(double frequency, double) {
 
-  float omega = juce::MathConstants<float>::twoPi * frequency / m_SampleRate;
+double Filter::GetMagnitudeForFrequency(double frequency, double) const {
 
-  std::complex<float> numerator =
-      m_B0 + m_B1 * std::exp(std::complex<float>(0, -omega)) +
-      m_B2 * std::exp(std::complex<float>(0, -2.0f * omega));
-  std::complex<float> denominator =
-      1.0f + m_A1 * std::exp(std::complex<float>(0, -omega)) +
-      m_A2 * std::exp(std::complex<float>(0, -2.0f * omega));
+  double omega = juce::MathConstants<double>::twoPi * frequency / m_SampleRate;
+
+  std::complex<double> numerator =
+      m_B0 + m_B1 * std::exp(std::complex<double>(0, -omega)) +
+      m_B2 * std::exp(std::complex<double>(0, -2.0 * omega));
+  std::complex<double> denominator =
+      1.0 + m_A1 * std::exp(std::complex<double>(0, -omega)) +
+      m_A2 * std::exp(std::complex<double>(0, -2.0 * omega));
 
   return std::abs(numerator / denominator);
 }

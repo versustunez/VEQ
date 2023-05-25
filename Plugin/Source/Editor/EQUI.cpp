@@ -67,7 +67,7 @@ void EQUI::Handle(Events::Event *event) {
 
   int val = (int)pc->Parameter->getValue();
 
-  m_Q->setVisible(val == 2);
+  m_Q->setVisible(val != 0);
   m_Frequency->setVisible(val != 0);
   m_Gain->setVisible(val != 0);
 

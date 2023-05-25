@@ -6,28 +6,28 @@ public:
   enum class Type { LowShelf, HighShelf, Peak, NO };
 
   void SetFilterType(Type type);
-  void SetSampleRate(float sampleRate);
+  void SetSampleRate(double sampleRate);
   void Reset();
-  float ApplyLeft(float in);
-  float ApplyRight(float in);
+  double ApplyLeft(double in);
+  double ApplyRight(double in);
   bool IsBypassed() const { return m_Type == Type::NO; }
 
-  void CalculateCoefficients(float gain, float frequency, float q = 0.0);
+  void CalculateCoefficients(double gain, double frequency, double q = 0.0);
 
-  double GetMagnitudeForFrequency(double frequency, double sampleRate);
+  double GetMagnitudeForFrequency(double frequency, double sampleRate) const;
 
 protected:
   Type m_Type{Type::NO};
-  float m_SampleRate{44100.0f};
+  double m_SampleRate{44100.0f};
 
-  float m_B0{0}, m_B1{0}, m_B2{0};
-  float m_A0{0}, m_A1{0}, m_A2{0};
+  double m_B0{0}, m_B1{0}, m_B2{0};
+  double m_A0{0}, m_A1{0}, m_A2{0};
 
-  float m_xL1{0}, m_xL2{0};
-  float m_yL1{0}, m_yL2{0};
+  double m_xL1{0}, m_xL2{0};
+  double m_yL1{0}, m_yL2{0};
 
-  float m_xR1{0}, m_xR2{0};
-  float m_yR1{0}, m_yR2{0};
+  double m_xR1{0}, m_xR2{0};
+  double m_yR1{0}, m_yR2{0};
 };
 
 } // namespace VSTZ
