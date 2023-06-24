@@ -51,6 +51,6 @@ void ParameterHandler::SetupParameter() {
          }});
   }
   AddBoolParameter("bypass", "Bypass", false);
-  AddBoolParameter("auto_gain", "Auto Gain", true);
+  AddBoolParameter("auto_gain", "Auto Gain", false);
 }
 } // namespace VSTZ::Core

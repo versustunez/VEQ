@@ -15,12 +15,12 @@ void FlatLook::drawButtonBackground(juce::Graphics &graphics,
                                     bool shouldDrawButtonAsHighlighted, bool) {
   auto buttonArea = button.getLocalBounds();
   if (shouldDrawButtonAsHighlighted)
-    graphics.setColour(theme->getColor(Theme::Colors::accent));
+    graphics.setColour(theme->getColor(Theme::Colors::accent).withAlpha(0.3f));
   else
-    graphics.setColour(theme->getColor(Theme::Colors::accentTwo));
+    graphics.setColour(juce::Colours::black.withAlpha(0.2f));
   graphics.fillRoundedRectangle(buttonArea.getX(), buttonArea.getY(),
                                 buttonArea.getWidth(), buttonArea.getHeight(),
-                                cornerRadius);
+                                0);
 }
 
 void FlatLook::drawRotarySlider(juce::Graphics &g, int x, int y, int width,
@@ -87,13 +87,13 @@ void FlatLook::drawToggleButton(juce::Graphics &graphics,
   if (text == "")
     text = isPressed ? "On" : "Off";
 
-  auto color = theme->getColor(Colors::accent);
-  auto color2 = theme->getColor(Colors::accentTwo);
+  auto color = theme->getColor(Colors::accent).withAlpha(0.5f);
+  auto color2 = theme->getColor(Colors::accentTwo).withAlpha(0.2f);
   graphics.setColour(isPressed ? color : color2);
 
   auto l = 0;
   auto p = 0;
-  graphics.fillRoundedRectangle(l, l, width - p, height - p, cornerRadius);
+  graphics.fillRoundedRectangle(l, l, width - p, height - p, 0);
   graphics.setColour(theme->getColor(Colors::font));
   graphics.setFont(11);
   graphics.drawText(text, l, l, width - p, height - p,

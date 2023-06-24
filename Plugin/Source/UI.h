@@ -4,20 +4,13 @@
 #include "Editor/FrequencyResponse.h"
 #include "Editor/Spectrum.h"
 #include "Editor/XYPad.h"
+#include "Editor/dBMeter.h"
+#include "Editor/Logo.h"
 
 #include <GUI/Components/Components.h>
 #include <TypeDefs.h>
 
 namespace VSTZ {
-
-class Logo : public GUI::VComponent {
-public:
-  explicit Logo(InstanceID id);
-  void paint(juce::Graphics &g) override;
-
-protected:
-  InstanceID m_ID;
-};
 
 class UI : public GUI::VComponent {
 public:
@@ -30,12 +23,13 @@ protected:
   InstanceID m_ID{};
   Scope<GUI::Switch> m_Bypass;
   Scope<GUI::Switch> m_AutoGain;
-  Scope<Logo> m_Logo;
+  Scope<Editor::Logo> m_Logo;
   Scope<Editor::Spectrum> m_SpectrumLeft;
   Scope<Editor::Spectrum> m_SpectrumRight;
   Scope<Editor::FrequencyResponse> m_FrequencyResponse;
   Scope<Editor::XYPad> m_FrequencyPad;
   Scope<juce::TabbedComponent> m_Tab;
+  Scope<Editor::DecibelMeter> m_DecibelMeter;
 
   Core::Instance *m_Instance;
 };

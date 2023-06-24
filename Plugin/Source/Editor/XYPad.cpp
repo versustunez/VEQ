@@ -12,7 +12,7 @@ XYPad::XYPad(VSTZ::InstanceID id) : m_ID(id) {
     return;
   std::array<juce::Colour, VSTProcessor::Bands> bandColors = {
       juce::Colour(207, 77, 111),  juce::Colour(249, 111, 93),
-      juce::Colour(45, 216, 129),  juce::Colour(20, 83, 209),
+      juce::Colour(45, 216, 129),  juce::Colour(20, 133, 209),
       juce::Colour(197, 216, 109), juce::Colour(92, 164, 169),
       juce::Colour(191, 6, 3),     juce::Colour(131, 188, 255),
   };

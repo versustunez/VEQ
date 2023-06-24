@@ -20,5 +20,6 @@ private:
 protected:
   InstanceID m_ID{};
   std::array<juce::Path, VSTProcessor::Bands> m_ResponsePaths{};
+  juce::Path m_FullResponse;
 };
 } // namespace VSTZ::Editor

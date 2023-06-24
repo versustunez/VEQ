@@ -51,6 +51,9 @@ void FrequencyResponse::paint(juce::Graphics &g) {
     g.setColour(bandColors[i]);
     g.strokePath(m_ResponsePaths[i], juce::PathStrokeType(0.3f));
   }
+
+  g.setColour(juce::Colours::orange);
+  g.strokePath(m_FullResponse, juce::PathStrokeType(1.0f));
 }
 
 void FrequencyResponse::resized() { PrepareResponse(); }
@@ -62,6 +65,7 @@ void FrequencyResponse::Handle(Events::Event *) {
 
 void FrequencyResponse::PrepareResponse() {
   std::vector<double> mags;
+  std::vector<double> magsFullResponse;
   auto *instance = Core::Instance::get(m_ID);
   auto &bands = instance->Processor->FilterBands;
   double sampleRate = Core::Config::get().sampleRate;
@@ -85,26 +89,35 @@ void FrequencyResponse::PrepareResponse() {
 
   int w = getWidth();
   mags.resize((size_t)w);
+  magsFullResponse.resize((size_t)w);
+  int activeBands = 1;
 
   for (int i = 0; i < VSTProcessor::Bands; ++i) {
     auto &band = bands[i];
     auto &path = m_ResponsePaths[i];
+    path.clear();
+    if (band.ApplyingFilter.IsBypassed()) {
+      continue;
+    }
+    activeBands++;
     for (int j = 0; j < w; ++j) {
       auto freq = juce::mapToLog10(double(j) / (double)w, 20.0, 20000.0);
-      if (!band.ApplyingFilter.IsBypassed()) {
-        mags[j] = juce::Decibels::gainToDecibels(
-            band.ApplyingFilter.GetMagnitudeForFrequency(freq, sampleRate));
-      } else {
-        break;
-      }
+      mags[j] = juce::Decibels::gainToDecibels(
+          band.ApplyingFilter.GetMagnitudeForFrequency(freq, sampleRate));
+      magsFullResponse[j] += mags[j];
     }
-    path.clear();
-    if (!band.ApplyingFilter.IsBypassed()) {
-      path.startNewSubPath(bounds.getX(), map(mags[0]));
-      for (int j = 1; j < w; ++j) {
-        path.lineTo(bounds.getX() + j, map(mags[j]));
-      }
+    path.startNewSubPath(bounds.getX(), map(mags[0] * 0.5));
+    for (int j = 1; j < w; ++j) {
+      path.lineTo(bounds.getX() + j, map(mags[j] * 0.5));
     }
+  }
+
+  m_FullResponse.clear();
+  m_FullResponse.startNewSubPath(bounds.getX(),
+                                 map(magsFullResponse[0] / activeBands));
+  for (int j = 1; j < w; ++j) {
+    m_FullResponse.lineTo(bounds.getX() + j,
+                          map(magsFullResponse[j] / activeBands));
   }
 }
 } // namespace VSTZ::Editor

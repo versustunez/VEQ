@@ -34,38 +34,34 @@ void UI::Init() {
   m_FrequencyPad.Create(m_ID);
   m_FrequencyPad->SetTabbedComponents(m_Tab.Get());
 
+  m_DecibelMeter.Create(m_ID);
+
   addAndMakeVisible(*m_Logo);
   addAndMakeVisible(*m_Bypass);
   addAndMakeVisible(*m_AutoGain);
   addAndMakeVisible(*m_SpectrumLeft);
   addAndMakeVisible(*m_SpectrumRight);
+  addAndMakeVisible(*m_DecibelMeter);
   addAndMakeVisible(*m_FrequencyResponse);
   addAndMakeVisible(*m_FrequencyPad);
   addAndMakeVisible(*m_Tab);
 }
 void UI::resized() {
-  m_Bypass->setBounds(getWidth() - 70, 10, 50, 20);
-  m_AutoGain->setBounds(getWidth() - 130, 10, 50, 20);
-  m_Logo->setBounds(10, 5, getWidth(), 30);
+  m_Bypass->setBounds(getWidth() - 70, 0, 70, 40);
+  m_AutoGain->setBounds(getWidth() - 140, 0, 70, 40);
+  m_Logo->setBounds(5, 5, 100, 30);
   int specHeight = getHeight() - (TabHeight + 40);
-  m_SpectrumLeft->setBounds(0, 40, getWidth(), specHeight);
-  m_SpectrumRight->setBounds(0, 40, getWidth(), specHeight);
-  m_FrequencyResponse->setBounds(0, 40, getWidth(), specHeight);
-  m_FrequencyPad->setBounds(0, 40, getWidth(), specHeight);
+  juce::Rectangle<int> newBounds{20, 40, getWidth() - 20, specHeight};
+  m_SpectrumLeft->setBounds(newBounds);
+  m_SpectrumRight->setBounds(newBounds);
+  m_FrequencyResponse->setBounds(newBounds);
+  m_FrequencyPad->setBounds(newBounds);
+  m_DecibelMeter->setBounds(0, 40, getWidth(), specHeight);
   m_Tab->setBounds(0, getHeight() - TabHeight, getWidth(), TabHeight);
 }
 
 void UI::paint(juce::Graphics &g) {
   g.setColour(juce::Colour(0.0f, 0.0f, 0.0f, .2f));
   g.fillRect(0, 0, getWidth(), 40);
-}
-
-Logo::Logo(InstanceID id) : m_ID(id) {}
-void Logo::paint(juce::Graphics &g) {
-
-  g.setColour(juce::Colours::white);
-  g.setFont(24);
-  g.drawText(JucePlugin_Name, 0, 0, getWidth(), getHeight(),
-             juce::Justification::centredLeft, true);
 }
 } // namespace VSTZ
