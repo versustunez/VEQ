@@ -80,6 +80,8 @@ void Parameter::SetValueAndNotifyHost(float value) {
   }
 }
 void Parameter::ResetToDefault() {
-  SetValueAndNotifyHost(m_InternalParameter->getDefaultValue());
+  float value = m_InternalParameter->getDefaultValue();
+  m_value = m_InternalParameter->convertFrom0to1(value);
+  m_InternalParameter->setValueNotifyingHost(value);
 }
 } // namespace VSTZ::Core

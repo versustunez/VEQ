@@ -57,6 +57,12 @@ void XYPad::paint(juce::Graphics &g) {
       g.setColour(point.Color);
       g.fillEllipse(
           juce::Rectangle<float>(point.X - 5.0f, point.Y - 5.0f, 10.0f, 10.0f));
+
+      if (point.Index == m_TabbedComponent->getCurrentTabIndex()) {
+        g.drawEllipse(juce::Rectangle<float>(point.X - 7.0f, point.Y - 7.0f,
+                                             14.0f, 14.0f),
+                      1.0f);
+      }
     }
   }
 }
@@ -81,9 +87,7 @@ void XYPad::mouseDown(const juce::MouseEvent &e) {
   if (e.getNumberOfClicks() == 2 && m_CurrentPoint) {
     m_CurrentPoint->Parameters.Gain->ResetToDefault();
     m_CurrentPoint->Parameters.Q->ResetToDefault();
-  }
-
-  if (e.getNumberOfClicks() == 2 && !m_CurrentPoint) {
+  } else if (e.getNumberOfClicks() == 2 && !m_CurrentPoint) {
     for (auto &point : m_Points) {
       if (!point.Active) {
         m_CurrentPoint = &point;
@@ -118,23 +122,9 @@ void XYPad::mouseDrag(const juce::MouseEvent &e) {
 
 void XYPad::mouseUp(const juce::MouseEvent &) { m_CurrentPoint = nullptr; }
 
+// @NOTE: This is kinda a mess... we
 void XYPad::UpdatePoint(size_t index) {
-  float scale = GetScale();
-  if (scale != m_Scale) {
-    if (m_CurrentPoint) {
-      auto *mouseMain = juce::Desktop::getInstance().getMouseSource(0);
-      if (mouseMain) {
-        auto pos = mouseMain->getScreenPosition();
-        mouseMain->setScreenPosition(
-            pos.withY((float)getScreenY() + m_Points[index].Y));
-        m_MouseUpdated = true;
-      }
-    }
-    m_Scale = scale;
-    resized();
-    return;
-  }
-
+  float scale = m_Scale;
   m_Points[index].Active = m_Points[index].Parameters.Type->getInt() != 0;
   auto freq = (float)m_Points[index].Parameters.Frequency->getValue();
   auto gain = (float)m_Points[index].Parameters.Gain->getValue();
@@ -165,7 +155,28 @@ void XYPad::mouseWheelMove(const juce::MouseEvent &,
   }
 }
 
+void XYPad::InternalUpdate(size_t index) {
+  float scale = GetScale();
+  if (scale != m_Scale) {
+    if (m_CurrentPoint) {
+      auto *mouseMain = juce::Desktop::getInstance().getMouseSource(0);
+      if (mouseMain) {
+        auto pos = mouseMain->getScreenPosition();
+        auto gain = (float)m_Points[index].Parameters.Gain->getValue();
+        float newY = juce::jmap(gain, -scale, scale, (float)getHeight(), 0.0f);
+        mouseMain->setScreenPosition(pos.withY((float)getScreenY() + newY));
+        m_MouseUpdated = true;
+      }
+    }
+    m_Scale = scale;
+    resized();
+    return;
+  }
+}
+
 void XYPadPointListener::Handle(Events::Event *) {
+  m_Pad->InternalUpdate(m_Point->Index);
+
   m_Pad->UpdatePoint(m_Point->Index);
 }
 } // namespace VSTZ::Editor

@@ -51,6 +51,8 @@ public:
   void mouseWheelMove(const juce::MouseEvent &event,
                       const juce::MouseWheelDetails &wheel) override;
 
+  void InternalUpdate(size_t index);
+
 protected:
   float GetScale();
 protected:
