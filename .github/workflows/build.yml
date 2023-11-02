@@ -14,7 +14,7 @@ jobs:
       - name: Create Build Environment
         run: cmake -E make_directory ${{github.workspace}}/build
 
-      - name: Install Dependecies
+      - name: Install Dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt update
@@ -30,4 +30,4 @@ jobs:
       - name: Build
         shell: bash
         working-directory: build
-        run: cmake --build $GITHUB_WORKSPACE/build --config Release
+        run: cmake --build $GITHUB_WORKSPACE/build --config Release --parallel 2
