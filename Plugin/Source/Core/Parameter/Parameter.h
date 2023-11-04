@@ -5,6 +5,7 @@
 #include <TypeDefs.h>
 #include <memory>
 #include <string>
+#include <functional>
 
 namespace VSTZ::Core {
 enum ParameterTypes { Integer = 0, Float, Boolean };
@@ -19,6 +20,7 @@ protected:
   double m_value{};
 
 public:
+  using ValueChangeFnc = std::function<void(double)>;
   Parameter(std::string name, std::string showName, double min, double max,
             double value, size_t id);
   ~Parameter() override = default;
@@ -48,7 +50,12 @@ public:
     m_InternalParameter = param;
   }
 
+  void RegisterChangeFunction(const ValueChangeFnc& fnc) {
+    m_CallbackFunctions.push_back(fnc);
+  }
+
 protected:
+  std::vector<ValueChangeFnc> m_CallbackFunctions;
   juce::RangedAudioParameter *m_InternalParameter{nullptr};
 };
 } // namespace VSTZ::Core

@@ -21,6 +21,9 @@ VSTProcessor::VSTProcessor()
   m_Parameters.Bypass = instance->handler->GetParameter("bypass");
   m_Parameters.AutoGain = instance->handler->GetParameter("auto_gain");
 
+  m_Parameters.AutoGain->RegisterChangeFunction(
+      [&](double value) { CalculateAutoGain(); });
+
   // Set up the Bands Change Listener...
   for (int i = 0; i < Bands; ++i) {
     std::string freq = fmt::format("Band{}_freq", i + 1);
@@ -38,6 +41,9 @@ VSTProcessor::VSTProcessor()
     instance->EventHandler.AddHandler(type, BandListener[i].Get());
     instance->EventHandler.AddHandler(qFactor, BandListener[i].Get());
     instance->EventHandler.AddHandler(gain, BandListener[i].Get());
+
+    FilterBands[i].Gain->RegisterChangeFunction(
+        [this](double value) { CalculateAutoGain(); });
   }
 }
 
@@ -58,12 +64,7 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   auto *dataRight = buffer.getReadPointer(1);
   auto *writeLeft = buffer.getWritePointer(0);
   auto *writeRight = buffer.getWritePointer(1);
-  auto &autoGain = processor.GetAutoGain();
   bool useAutoGain = parameters.AutoGain->getBool();
-
-  if (useAutoGain) {
-    autoGain.CalculateInputGain(buffer);
-  }
 
   for (int i = 0; i < buffer.getNumSamples(); ++i) {
     int active = 1;
@@ -82,11 +83,7 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   }
 
   if (useAutoGain) {
-    auto previousGain = autoGain.GetGain();
-    autoGain.CalculateOutputGain(buffer);
-    for (int i = 0; i < buffer.getNumChannels(); ++i)
-      buffer.applyGainRamp(i, 0, buffer.getNumSamples(), previousGain,
-                           autoGain.GetGain());
+    buffer.applyGain(processor.m_AutoGainValue);
   }
 
   for (int i = 0; i < buffer.getNumSamples(); ++i) {
@@ -141,7 +138,6 @@ void VSTProcessor::prepareToPlay(double sampleRate, int) {
   if (config.sampleRate != sampleRate) {
     config.sampleRate = sampleRate;
   }
-  m_AutoGain.SetSampleRate(sampleRate);
   for (auto &band : FilterBands) {
     band.ApplyingFilter.SetSampleRate((float)sampleRate);
   }
@@ -162,6 +158,18 @@ bool VSTProcessor::supportsDoublePrecisionProcessing() const { return true; }
 void VSTProcessor::processBlock(juce::AudioBuffer<double> &buffer,
                                 juce::MidiBuffer &) {
   ProcessBlock(buffer, *this);
+}
+
+void VSTProcessor::CalculateAutoGain() {
+  if (!m_Parameters.AutoGain)
+    return;
+
+  double dB = 0;
+  for (auto &FilterBand : FilterBands) {
+    dB += FilterBand.ApplyingFilter.IsBypassed() ? 0
+                                                 : -FilterBand.Gain->getValue();
+  }
+  m_AutoGainValue = (float)std::pow(10.0, dB / 20.0);
 }
 
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {

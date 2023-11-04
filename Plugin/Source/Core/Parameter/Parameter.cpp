@@ -69,6 +69,10 @@ void Parameter::parameterValueChanged(int, float newValue) {
   event->Parameter = this;
   event->Value = newValue;
   Instance::get(m_id)->EventHandler.TriggerEvent(m_name, event);
+
+  for (auto &fnc : m_CallbackFunctions) {
+    fnc(newValue);
+  }
 }
 // can be used for displays or something :D
 void Parameter::parameterGestureChanged(int, bool) {}

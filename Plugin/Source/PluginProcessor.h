@@ -45,9 +45,12 @@ public:
 
   void getStateInformation(juce::MemoryBlock &destData) override;
   void setStateInformation(const void *data, int sizeInBytes) override;
+
+  void CalculateAutoGain();
 public:
-  VSTZ::AutoGain& GetAutoGain() { return m_AutoGain; }
+  float m_AutoGainValue{1};
   VSTZ::Parameters& GetParameters() { return m_Parameters; }
+
 public:
   VSTZ::Core::Instance *instance = nullptr;
   constexpr static int Bands{8};
@@ -58,5 +61,4 @@ private:
   std::string m_Id;
   juce::AudioProcessorValueTreeState m_TreeState;
   VSTZ::Parameters m_Parameters{};
-  VSTZ::AutoGain m_AutoGain{};
 };
