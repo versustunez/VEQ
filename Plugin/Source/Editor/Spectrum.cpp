@@ -33,23 +33,31 @@ void Spectrum::paint(juce::Graphics &g) {
 }
 
 void Spectrum::PrepareFFT() {
+  constexpr float slope_dB_per_octave = -4.5f; // this matches PRO-Q3 by default :)
+  constexpr float lowestFrequency = 20.0f;
   if (!m_FFT->IsDirty())
     return;
+  float lowestFrequencyLog = std::log2(lowestFrequency);
   m_FFT->ApplyFFT();
-  auto *fftData = m_FFT->GetFFTData();
-  auto fftSize = FFT::GetFFTSize();
-  const float offset = juce::Decibels::gainToDecibels((float)fftSize);
-
-  const float infinity = -70.0f;
+  const auto *fftData = m_FFT->GetFFTData();
+  constexpr auto fftSize = FFT::GetFFTSize();
+  const float offset =
+      juce::Decibels::gainToDecibels(static_cast<float>(fftSize));
+  const auto sampleRate = Core::Config::get().sampleRate;
+  constexpr float infinity = -70.0f;
 
   for (int i = 0; i < fftSize; ++i) {
-    float binData = juce::jmap(
-        juce::Decibels::gainToDecibels(fftData[i], infinity) - offset, infinity,
-        6.0f, 0.0f, 1.0f);
+    const float freq = i * sampleRate / fftSize;
+    float bindB = juce::Decibels::gainToDecibels(fftData[i], infinity) - offset;
+    if (freq > lowestFrequency) {
+      const float logFreq = std::log2(freq);
+      bindB = bindB - slope_dB_per_octave * (logFreq - lowestFrequencyLog);
+    }
+    const float binData = juce::jmap(bindB, infinity, 6.0f, 0.0f, 1.0f);
     if (m_FFTData[i] < binData) {
       m_FFTData[i] = binData;
     } else {
-      m_FFTData[i] *= 0.9f;
+      m_FFTData[i] *= 0.95f; // maybe the falloff speed needs to be configured :)
     }
   }
 }

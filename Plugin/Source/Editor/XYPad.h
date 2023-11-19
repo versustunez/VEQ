@@ -54,9 +54,9 @@ public:
   void InternalUpdate(size_t index);
 
 protected:
-  float GetScale();
+  float GetScale() const;
 protected:
-  float m_Scale{6.0f};
+  float m_Scale{0.0f};
   EQPoint *m_CurrentPoint{nullptr};
   bool m_MouseUpdated{false};
 

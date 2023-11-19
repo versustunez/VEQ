@@ -15,6 +15,12 @@ void UI::Init() {
 
   m_AutoGain.Create("auto_gain", "Auto Gain", m_ID);
   m_AutoGain->setButtonText("Auto Gain");
+
+  m_Warmth.Create("analog", "Analog", m_ID);
+  m_Warmth->setButtonText("Analog");
+
+  m_WarmthStrength.Create("analog_strength", "Strength", m_ID);
+
   m_Logo.Create(m_ID);
   m_Tab.Create(juce::TabbedButtonBar::Orientation::TabsAtBottom);
   m_Tab->setOutline(0);
@@ -39,6 +45,8 @@ void UI::Init() {
   addAndMakeVisible(*m_Logo);
   addAndMakeVisible(*m_Bypass);
   addAndMakeVisible(*m_AutoGain);
+  addAndMakeVisible(*m_Warmth);
+  addAndMakeVisible(*m_WarmthStrength);
   addAndMakeVisible(*m_SpectrumLeft);
   addAndMakeVisible(*m_SpectrumRight);
   addAndMakeVisible(*m_DecibelMeter);
@@ -49,6 +57,8 @@ void UI::Init() {
 void UI::resized() {
   m_Bypass->setBounds(getWidth() - 70, 0, 70, 40);
   m_AutoGain->setBounds(getWidth() - 140, 0, 70, 40);
+  m_Warmth->setBounds(getWidth() - 210, 0, 70, 20);
+  m_WarmthStrength->setBounds(getWidth() - 210, 20, 70, 20);
   m_Logo->setBounds(5, 5, 100, 30);
   int specHeight = getHeight() - (TabHeight + 40);
   juce::Rectangle<int> newBounds{20, 40, getWidth() - 20, specHeight};

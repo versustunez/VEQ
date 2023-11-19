@@ -47,9 +47,13 @@ public:
   void setStateInformation(const void *data, int sizeInBytes) override;
 
   void CalculateAutoGain();
+  void CalculateWarmthEffect();
 public:
   float m_AutoGainValue{1};
+  float m_WarmthSlew{1};
   VSTZ::Parameters& GetParameters() { return m_Parameters; }
+  float m_LastValueLeft{0};
+  float m_LastValueRight{0};
 
 public:
   VSTZ::Core::Instance *instance = nullptr;

@@ -20,6 +20,12 @@ VSTProcessor::VSTProcessor()
   VSTZ::Core::Config::get().registerProcessor(m_Id, this);
   m_Parameters.Bypass = instance->handler->GetParameter("bypass");
   m_Parameters.AutoGain = instance->handler->GetParameter("auto_gain");
+  m_Parameters.Warmth = instance->handler->GetParameter("analog");
+  m_Parameters.WarmthEffect =
+      instance->handler->GetParameter("analog_strength");
+
+  m_Parameters.WarmthEffect->RegisterChangeFunction(
+      [this](double) { CalculateWarmthEffect(); });
 
   m_Parameters.AutoGain->RegisterChangeFunction(
       [&](double value) { CalculateAutoGain(); });
@@ -43,8 +49,22 @@ VSTProcessor::VSTProcessor()
     instance->EventHandler.AddHandler(gain, BandListener[i].Get());
 
     FilterBands[i].Gain->RegisterChangeFunction(
-        [this](double value) { CalculateAutoGain(); });
+        [this](double) { CalculateAutoGain(); });
   }
+  CalculateAutoGain();
+  CalculateWarmthEffect();
+}
+
+static float ApplySlewLimiter(const float in, float &lastValue,
+                              const float slewRate = 0.75) {
+  float diff = in - lastValue;
+  if (diff > slewRate) {
+    diff = slewRate;
+  } else if (diff < -slewRate) {
+    diff = -slewRate;
+  }
+  lastValue = lastValue + diff;
+  return lastValue;
 }
 
 template <typename T>
@@ -65,21 +85,36 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   auto *writeLeft = buffer.getWritePointer(0);
   auto *writeRight = buffer.getWritePointer(1);
   bool useAutoGain = parameters.AutoGain->getBool();
+  bool warmth = parameters.Warmth->getBool();
+
+  processor.m_LastValueLeft = dataLeft[0];
+  processor.m_LastValueRight = dataRight[0];
 
   for (int i = 0; i < buffer.getNumSamples(); ++i) {
     int active = 1;
-    float dLeft = dataLeft[i];
-    float dRight = dataRight[i];
+    const auto dLeft = static_cast<float>(dataLeft[i]);
+    const auto dRight = static_cast<float>(dataRight[i]);
+    float lOut = dLeft;
+    float rOut = dRight;
     for (auto &band : processor.FilterBands) {
       auto &filter = band.ApplyingFilter;
       if (filter.IsBypassed())
         continue;
-      writeLeft[i] += filter.ApplyLeft(dLeft);
-      writeRight[i] += filter.ApplyRight(dRight);
+      lOut += static_cast<float>(filter.ApplyLeft(dLeft));
+      rOut += static_cast<float>(filter.ApplyRight(dRight));
       active++;
     }
-    writeLeft[i] /= active;
-    writeRight[i] /= active;
+    lOut /= static_cast<float>(active);
+    rOut /= static_cast<float>(active);
+
+    if (warmth) {
+      lOut = ApplySlewLimiter(lOut, processor.m_LastValueLeft,
+                              processor.m_WarmthSlew);
+      rOut = ApplySlewLimiter(rOut, processor.m_LastValueRight,
+                              processor.m_WarmthSlew);
+    }
+    writeLeft[i] = lOut;
+    writeRight[i] = rOut;
   }
 
   if (useAutoGain) {
@@ -87,8 +122,8 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   }
 
   for (int i = 0; i < buffer.getNumSamples(); ++i) {
-    processor.instance->LeftFFT.PushSample(writeLeft[i]);
-    processor.instance->RightFFT.PushSample(writeRight[i]);
+    processor.instance->LeftFFT.PushSample(static_cast<float>(writeLeft[i]));
+    processor.instance->RightFFT.PushSample(static_cast<float>(writeRight[i]));
   }
 
   if (processor.instance->LeftFFT.IsDirty()) {
@@ -165,11 +200,19 @@ void VSTProcessor::CalculateAutoGain() {
     return;
 
   double dB = 0;
+  int active = 1;
   for (auto &FilterBand : FilterBands) {
     dB += FilterBand.ApplyingFilter.IsBypassed() ? 0
                                                  : -FilterBand.Gain->getValue();
+    active++;
   }
+  dB /= active;
   m_AutoGainValue = (float)std::pow(10.0, dB / 20.0);
+}
+
+void VSTProcessor::CalculateWarmthEffect() {
+  const auto alpha = static_cast<float>(m_Parameters.WarmthEffect->getValue());
+  m_WarmthSlew = 1.0f + alpha * (0.5f - 1.0f);
 }
 
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {

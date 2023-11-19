@@ -5,7 +5,7 @@ FFT::FFT()
     : m_ForwardFFT(FFTOrder),
       m_Window(FFTSize, juce::dsp::WindowingFunction<float>::hann, true) {}
 
-void FFT::PushSample(float sample) {
+void FFT::PushSample(const float sample) {
   if (m_FifoIndex == FFTSize) {
     if (!m_NextFFTBlockReady) {
       juce::zeromem(m_FFTData, sizeof(m_FFTData));

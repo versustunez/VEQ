@@ -92,6 +92,12 @@ public:
            button.getTabbedButtonBar().getNumTabs();
   }
 
+  void drawLinearSliderBackground(juce::Graphics &graphics, int x, int y,
+                                int width, int height, float sliderPos,
+                                float minSliderPos, float maxSliderPos,
+                                const juce::Slider::SliderStyle style,
+                                juce::Slider &slider) override;
+
 protected:
   void drawBasedOnKnob(juce::Graphics &g, int x, int y, int width, int height,
                        float sliderPosProportional, float rotaryStartAngle,

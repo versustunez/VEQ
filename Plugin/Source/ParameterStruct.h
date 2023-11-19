@@ -7,6 +7,8 @@ namespace VSTZ {
 struct Parameters {
   Core::Parameter *Bypass{nullptr};
   Core::Parameter *AutoGain{nullptr};
+  Core::Parameter *Warmth{nullptr};
+  Core::Parameter *WarmthEffect{nullptr};
 };
 struct Band {
   Core::Parameter *Frequency{};

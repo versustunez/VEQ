@@ -2,11 +2,12 @@
 
 #include "Core/Instance.h"
 #include "Editor/FrequencyResponse.h"
+#include "Editor/Logo.h"
 #include "Editor/Spectrum.h"
 #include "Editor/XYPad.h"
 #include "Editor/dBMeter.h"
-#include "Editor/Logo.h"
 
+#include <GUI/Components/BoxSlider.h>
 #include <GUI/Components/Components.h>
 #include <TypeDefs.h>
 
@@ -23,6 +24,8 @@ protected:
   InstanceID m_ID{};
   Scope<GUI::Switch> m_Bypass;
   Scope<GUI::Switch> m_AutoGain;
+  Scope<GUI::Switch> m_Warmth;
+  Scope<GUI::BoxSlider> m_WarmthStrength;
   Scope<Editor::Logo> m_Logo;
   Scope<Editor::Spectrum> m_SpectrumLeft;
   Scope<Editor::Spectrum> m_SpectrumRight;

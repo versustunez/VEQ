@@ -203,13 +203,27 @@ void LookHandler::drawLinearSlider(juce::Graphics &graphics, int x, int y,
                                    const juce::Slider::SliderStyle style,
                                    juce::Slider &slider) {
   if (slider.isBar()) {
-    graphics.setColour(theme->getColor(Colors::accent));
-    graphics.fillRect(
-        juce::Rectangle<float>((float)x + 0.5f, sliderPos, (float)width - 1.0f,
-                               (float)y + ((float)height - sliderPos)));
+    graphics.setColour(theme->getColor(Colors::accentTwo));
+    if (slider.isVertical()) {
+      juce::Rectangle<float>((float)x + 0.5f, 0, (float)width - 1.0,
+                             (float)y + ((float)height - sliderPos));
+    } else {
+      graphics.fillRect(juce::Rectangle<float>(
+          0, (float)y + 0.5f, sliderPos, (float)height - ((float)y + 0.5f)));
+    }
+
+    graphics.setColour(juce::Colours::white);
+    graphics.setFont(10.0f);
+    graphics.drawFittedText(slider.getTextFromValue(slider.getValue()), 0, 0,
+                            width, height, juce::Justification::centred, 1);
+
   } else {
     LookAndFeel_V4::drawLinearSlider(graphics, x, y, width, height, sliderPos,
                                      minSliderPos, maxSliderPos, style, slider);
   }
 }
+void LookHandler::drawLinearSliderBackground(
+    juce::Graphics &graphics, int x, int y, int width, int height,
+    float sliderPos, float minSliderPos, float maxSliderPos,
+    const juce::Slider::SliderStyle style, juce::Slider &slider) {}
 } // namespace VSTZ::GUI

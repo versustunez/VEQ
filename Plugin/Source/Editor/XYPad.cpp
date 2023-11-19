@@ -6,11 +6,11 @@
 #include <FMT.h>
 
 namespace VSTZ::Editor {
-XYPad::XYPad(VSTZ::InstanceID id) : m_ID(id) {
+XYPad::XYPad(InstanceID id) : m_ID(id) {
   auto *instance = Core::Instance::get(m_ID);
   if (!instance)
     return;
-  std::array<juce::Colour, VSTProcessor::Bands> bandColors = {
+  const std::array bandColors = {
       juce::Colour(207, 77, 111),  juce::Colour(249, 111, 93),
       juce::Colour(45, 216, 129),  juce::Colour(20, 133, 209),
       juce::Colour(197, 216, 109), juce::Colour(92, 164, 169),
@@ -56,18 +56,21 @@ void XYPad::paint(juce::Graphics &g) {
     if (point.Active) {
       g.setColour(point.Color);
       g.fillEllipse(
-          juce::Rectangle<float>(point.X - 5.0f, point.Y - 5.0f, 10.0f, 10.0f));
+          juce::Rectangle(point.X - 5.0f, point.Y - 5.0f, 10.0f, 10.0f));
 
       if (point.Index == m_TabbedComponent->getCurrentTabIndex()) {
-        g.drawEllipse(juce::Rectangle<float>(point.X - 7.0f, point.Y - 7.0f,
-                                             14.0f, 14.0f),
-                      1.0f);
+        g.drawEllipse(
+            juce::Rectangle(point.X - 7.0f, point.Y - 7.0f, 14.0f, 14.0f),
+            1.0f);
       }
     }
   }
 }
 
 void XYPad::resized() {
+  if (m_Scale == 0.0) {
+    m_Scale = GetScale();
+  }
   for (size_t i = 0; i < VSTProcessor::Bands; ++i) {
     UpdatePoint(i);
   }
@@ -80,7 +83,7 @@ void XYPad::mouseDown(const juce::MouseEvent &e) {
     if (point.X - 5.0f <= x && x <= point.X + 5.0f && point.Y - 5.0f <= y &&
         y <= point.Y + 5.0f && point.Active) {
       m_CurrentPoint = &point;
-      m_TabbedComponent->setCurrentTabIndex((int)point.Index);
+      m_TabbedComponent->setCurrentTabIndex(static_cast<int>(point.Index));
       break;
     }
   }
@@ -91,9 +94,9 @@ void XYPad::mouseDown(const juce::MouseEvent &e) {
     for (auto &point : m_Points) {
       if (!point.Active) {
         m_CurrentPoint = &point;
-        m_TabbedComponent->setCurrentTabIndex((int)point.Index);
-        float widthPercent = (float)getWidth() / 100.0f;
-        if (x < widthPercent * 4) {
+        m_TabbedComponent->setCurrentTabIndex(static_cast<int>(point.Index));
+        if (const float widthPercent = static_cast<float>(getWidth()) / 100.0f;
+            x < widthPercent * 4) {
           point.Parameters.Type->SetValueAndNotifyHost(1);
         } else if (x > widthPercent * 96) {
           point.Parameters.Type->SetValueAndNotifyHost(3);
@@ -111,8 +114,10 @@ void XYPad::mouseDrag(const juce::MouseEvent &e) {
   float x = e.position.x;
   float y = e.position.y;
   if (!m_MouseUpdated && m_CurrentPoint) {
-    auto freq = (float)juce::mapToLog10(x / (double)getWidth(), 20.0, 20000.0);
-    float gain = juce::jmap(y, 0.0f, (float)getHeight(), m_Scale, -m_Scale);
+    const auto freq = static_cast<float>(
+        juce::mapToLog10(x / static_cast<double>(getWidth()), 20.0, 20000.0));
+    const float gain =
+        juce::jmap(y, 0.0f, static_cast<float>(getHeight()), m_Scale, -m_Scale);
 
     m_CurrentPoint->Parameters.Frequency->SetValueAndNotifyHost(freq);
     m_CurrentPoint->Parameters.Gain->SetValueAndNotifyHost(gain);
@@ -124,23 +129,28 @@ void XYPad::mouseUp(const juce::MouseEvent &) { m_CurrentPoint = nullptr; }
 
 // @NOTE: This is kinda a mess... we
 void XYPad::UpdatePoint(size_t index) {
-  float scale = m_Scale;
+  const float scale = m_Scale;
   m_Points[index].Active = m_Points[index].Parameters.Type->getInt() != 0;
-  auto freq = (float)m_Points[index].Parameters.Frequency->getValue();
-  auto gain = (float)m_Points[index].Parameters.Gain->getValue();
+  const auto freq =
+      static_cast<float>(m_Points[index].Parameters.Frequency->getValue());
+  const auto gain =
+      static_cast<float>(m_Points[index].Parameters.Gain->getValue());
 
-  int xPos = int(juce::mapFromLog10(freq, 20.0f, 20000.0f) * (float)getWidth());
+  const int xPos = static_cast<int>(juce::mapFromLog10(freq, 20.0f, 20000.0f) *
+                                    static_cast<float>(getWidth()));
 
-  m_Points[index].X = (float)xPos;
-  m_Points[index].Y = juce::jmap(gain, -scale, scale, (float)getHeight(), 0.0f);
+  m_Points[index].X = static_cast<float>(xPos);
+  m_Points[index].Y =
+      juce::jmap(gain, -scale, scale, static_cast<float>(getHeight()), 0.0f);
   repaint();
 }
-float XYPad::GetScale() {
-  auto GetScale = [this](size_t index) {
+
+float XYPad::GetScale() const {
+  auto GetScale = [this](const size_t index) {
     return Utils::UI::ScaleData{m_Points[index].Parameters.Gain,
                                 m_Points[index].Parameters.Type};
   };
-  std::array<Utils::UI::ScaleData, 8> params = {
+  const std::array params = {
       GetScale(0), GetScale(1), GetScale(2), GetScale(3),
       GetScale(4), GetScale(5), GetScale(6), GetScale(7),
   };
@@ -151,26 +161,27 @@ void XYPad::mouseWheelMove(const juce::MouseEvent &,
                            const juce::MouseWheelDetails &wheel) {
   if (m_CurrentPoint) {
     m_CurrentPoint->Parameters.Q->SetValueAndNotifyHost(
-        (float)m_CurrentPoint->Parameters.Q->getValue() + wheel.deltaY);
+        static_cast<float>(m_CurrentPoint->Parameters.Q->getValue()) +
+        wheel.deltaY);
   }
 }
 
-void XYPad::InternalUpdate(size_t index) {
-  float scale = GetScale();
-  if (scale != m_Scale) {
+void XYPad::InternalUpdate(const size_t index) {
+  if (const float scale = GetScale(); scale != m_Scale) {
     if (m_CurrentPoint) {
-      auto *mouseMain = juce::Desktop::getInstance().getMouseSource(0);
-      if (mouseMain) {
-        auto pos = mouseMain->getScreenPosition();
-        auto gain = (float)m_Points[index].Parameters.Gain->getValue();
-        float newY = juce::jmap(gain, -scale, scale, (float)getHeight(), 0.0f);
-        mouseMain->setScreenPosition(pos.withY((float)getScreenY() + newY));
+      if (auto *mouseMain = juce::Desktop::getInstance().getMouseSource(0)) {
+        const auto pos = mouseMain->getScreenPosition();
+        const auto gain =
+            static_cast<float>(m_Points[index].Parameters.Gain->getValue());
+        const float newY = juce::jmap(gain, -scale, scale,
+                                      static_cast<float>(getHeight()), 0.0f);
+        mouseMain->setScreenPosition(
+            pos.withY(static_cast<float>(getScreenY()) + newY));
         m_MouseUpdated = true;
       }
     }
     m_Scale = scale;
     resized();
-    return;
   }
 }
 

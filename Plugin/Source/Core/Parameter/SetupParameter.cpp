@@ -12,6 +12,9 @@ void ParameterHandler::SetupParameter() {
   constexpr auto decibelCB = [](float value, float) -> juce::String {
     return juce::String(value, 2) + " dB";
   };
+  constexpr auto percentCB = [](float value, float) -> juce::String {
+    return juce::String(value * 100, 2) + "%";
+  };
   constexpr auto typeCB = [](float value, float) -> juce::String {
     switch ((int)value) {
     case 2: return "Peak";
@@ -52,5 +55,12 @@ void ParameterHandler::SetupParameter() {
   }
   AddBoolParameter("bypass", "Bypass", false);
   AddBoolParameter("auto_gain", "Auto Gain", false);
+  AddBoolParameter("analog", "Analog", false);
+  AddParameter({.Name = "analog_strength",
+                .View = "Analog Strength",
+                .Min = 0.0,
+                .Max = 1.0,
+                .Value = 0.15,
+                .ValueToStringCallback = percentCB});
 }
 } // namespace VSTZ::Core
