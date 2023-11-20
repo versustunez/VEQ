@@ -50,7 +50,8 @@ public:
   void CalculateWarmthEffect();
 public:
   float m_AutoGainValue{1};
-  float m_WarmthSlew{1};
+  float m_AnalogSlew{1};
+  float m_AnalogDistortion{0.03};
   VSTZ::Parameters& GetParameters() { return m_Parameters; }
   float m_LastValueLeft{0};
   float m_LastValueRight{0};

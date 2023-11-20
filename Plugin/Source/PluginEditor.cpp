@@ -46,5 +46,5 @@ void VSTEditor::setupGL(bool vsync) {
   m_openGLContext.makeActive();
 }
 void VSTEditor::newOpenGLContextCreated() {}
-void VSTEditor::renderOpenGL() { m_UI->repaint(); }
+void VSTEditor::renderOpenGL() {}
 void VSTEditor::openGLContextClosing() {}
