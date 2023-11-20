@@ -27,8 +27,8 @@ protected:
   Scope<GUI::Switch> m_Warmth;
   Scope<GUI::BoxSlider> m_WarmthStrength;
   Scope<Editor::Logo> m_Logo;
-  Scope<Editor::Spectrum> m_SpectrumLeft;
-  Scope<Editor::Spectrum> m_SpectrumRight;
+  Scope<Editor::Spectrum> m_SpectrumBefore;
+  Scope<Editor::Spectrum> m_SpectrumAfter;
   Scope<Editor::FrequencyResponse> m_FrequencyResponse;
   Scope<Editor::XYPad> m_FrequencyPad;
   Scope<juce::TabbedComponent> m_Tab;

@@ -25,8 +25,7 @@ std::unique_ptr<juce::RangedAudioParameter> Parameter::createParameter(
     juce::AudioParameterIntAttributes attributes;
     if (function) {
       attributes = juce::AudioParameterIntAttributes()
-                       .withStringFromValueFunction(function)
-                       .withLabel("%");
+                       .withStringFromValueFunction(function);
     }
 
     return std::make_unique<juce::AudioParameterInt>(
@@ -36,8 +35,7 @@ std::unique_ptr<juce::RangedAudioParameter> Parameter::createParameter(
     juce::AudioParameterFloatAttributes attributes;
     if (function) {
       attributes = juce::AudioParameterFloatAttributes()
-                       .withStringFromValueFunction(function)
-                       .withLabel("%");
+                       .withStringFromValueFunction(function);
     }
     return std::make_unique<juce::AudioParameterFloat>(
         m_name, m_showName, juce::NormalisableRange<float>(m_min, m_max),
@@ -50,8 +48,7 @@ std::unique_ptr<juce::RangedAudioParameter> Parameter::createParameter(
     juce::AudioParameterFloatAttributes attributes;
     if (function) {
       attributes = juce::AudioParameterFloatAttributes()
-                       .withStringFromValueFunction(function)
-                       .withLabel("%");
+                       .withStringFromValueFunction(function);
     }
     return std::make_unique<juce::AudioParameterFloat>(
         m_name, m_showName, juce::NormalisableRange<float>(m_min, m_max),

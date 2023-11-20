@@ -6,22 +6,30 @@
 #include <TypeDefs.h>
 
 namespace VSTZ::Editor {
-class Spectrum : public GUI::VComponent {
+class Spectrum final : public GUI::VComponent {
 public:
-  explicit Spectrum(InstanceID id, FFT *usingFFT) : m_ID(id), m_FFT(usingFFT){}
+  explicit Spectrum(const InstanceID id, FFT *usingFFT) : m_ID(id), m_FFT(usingFFT) {
+    m_SplineData.resize(FFT::GetFFTSize());
+  }
+  void createFFTPath(double sampleRate, int fftSize);
   void paint(juce::Graphics &g) override;
+  void resized() override;
 
-  void SetColor(float red, float green, float blue) {
-    m_SpectrumColor = juce::Colour::fromFloatRGBA(red, green, blue, 0.5f);
+  void SetColor(const float red, const float green, const float blue, const float alpha = 1.0f) {
+    m_SpectrumColor = juce::Colour::fromFloatRGBA(red, green, blue, alpha);
   }
 
 protected:
-  void PrepareFFT();
+  bool PrepareFFT();
 
 protected:
   InstanceID m_ID;
   FFT *m_FFT;
   float m_FFTData[FFT::GetFFTSize()]{};
-  juce::Colour m_SpectrumColor = juce::Colour::fromFloatRGBA(0.0f, 1.0f, 0.4f, 0.5f);
+  juce::Array<juce::Point<double>> m_SplineData{};
+  juce::Colour m_SpectrumColor =
+      juce::Colour::fromFloatRGBA(0.0f, 1.0f, 0.4f, 0.5f);
+  juce::Path m_PathTmp;
+  juce::Path m_Path;
 };
 } // namespace VSTZ::Editor

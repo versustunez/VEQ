@@ -23,7 +23,7 @@ void FFT::ApplyFFT() {
   }
   m_Window.multiplyWithWindowingTable(m_FFTData, FFTSize);
   m_ForwardFFT.performFrequencyOnlyForwardTransform(m_FFTData);
-  // juce::FloatVectorOperations::multiply (m_FFTData, 2.0f, FFTSize);
+  juce::FloatVectorOperations::multiply (m_FFTData, 2.0f, FFTSize);
   m_NextFFTBlockReady = false;
 }
 } // namespace VSTZ

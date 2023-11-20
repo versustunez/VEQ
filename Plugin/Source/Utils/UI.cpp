@@ -8,9 +8,9 @@ float UI::GetDecibelScale(const ScaleData &data) {
   double parameterValue = std::abs(data.Gain->getValue());
   if (parameterValue < 5.0f)
     return 6.0f;
-  else if (parameterValue < 10.0f)
+  if (parameterValue < 10.0f)
     return 12.0f;
-  else if (parameterValue < 20.0f)
+  if (parameterValue < 20.0f)
     return 24.0f;
   return 30.0f;
 }

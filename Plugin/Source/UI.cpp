@@ -30,10 +30,10 @@ void UI::Init() {
     m_Tab->addTab(std::to_string(i + 1), juce::Colour(0.0f, 0.0f, 0.0f, .2f),
                   eq, true);
   }
-  m_SpectrumLeft.Create(m_ID, &m_Instance->LeftFFT);
-  m_SpectrumRight.Create(m_ID, &m_Instance->RightFFT);
-  m_SpectrumLeft->SetColor(0.2f, 0.3f, 1.0f);
-  m_SpectrumRight->SetColor(0.0f, 1.0f, 0.3f);
+  m_SpectrumBefore.Create(m_ID, &m_Instance->InputFFT);
+  m_SpectrumAfter.Create(m_ID, &m_Instance->OutputFFT);
+  m_SpectrumBefore->SetColor(0.2f, 0.2f, 0.2f, .4f);
+  m_SpectrumAfter->SetColor(0.15f, 0.25f, 0.35f, .6f);
 
   m_FrequencyResponse.Create(m_ID);
 
@@ -47,8 +47,8 @@ void UI::Init() {
   addAndMakeVisible(*m_AutoGain);
   addAndMakeVisible(*m_Warmth);
   addAndMakeVisible(*m_WarmthStrength);
-  addAndMakeVisible(*m_SpectrumLeft);
-  addAndMakeVisible(*m_SpectrumRight);
+  addAndMakeVisible(*m_SpectrumBefore);
+  addAndMakeVisible(*m_SpectrumAfter);
   addAndMakeVisible(*m_DecibelMeter);
   addAndMakeVisible(*m_FrequencyResponse);
   addAndMakeVisible(*m_FrequencyPad);
@@ -62,8 +62,8 @@ void UI::resized() {
   m_Logo->setBounds(5, 5, 100, 30);
   int specHeight = getHeight() - (TabHeight + 40);
   juce::Rectangle<int> newBounds{20, 40, getWidth() - 20, specHeight};
-  m_SpectrumLeft->setBounds(newBounds);
-  m_SpectrumRight->setBounds(newBounds);
+  m_SpectrumBefore->setBounds(newBounds);
+  m_SpectrumAfter->setBounds(newBounds);
   m_FrequencyResponse->setBounds(newBounds);
   m_FrequencyPad->setBounds(newBounds);
   m_DecibelMeter->setBounds(0, 40, getWidth(), specHeight);

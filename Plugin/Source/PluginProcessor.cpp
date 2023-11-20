@@ -105,9 +105,11 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   processor.m_LastValueRight = dataRight[0];
 
   for (int i = 0; i < buffer.getNumSamples(); ++i) {
+
     int active = 1;
     const auto dLeft = static_cast<float>(dataLeft[i]);
     const auto dRight = static_cast<float>(dataRight[i]);
+    processor.instance->InputFFT.PushSample((dLeft + dRight) * 0.5f);
     float lOut = dLeft;
     float rOut = dRight;
     for (auto &band : processor.FilterBands) {
@@ -138,11 +140,11 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   }
 
   for (int i = 0; i < buffer.getNumSamples(); ++i) {
-    processor.instance->LeftFFT.PushSample(static_cast<float>(writeLeft[i]));
-    processor.instance->RightFFT.PushSample(static_cast<float>(writeRight[i]));
+    processor.instance->OutputFFT.PushSample(
+        static_cast<float>(writeLeft[i] + writeRight[i]) * 0.5f);
   }
 
-  if (processor.instance->LeftFFT.IsDirty()) {
+  if (processor.instance->InputFFT.IsDirty()) {
     auto *editor = dynamic_cast<VSTEditor *>(processor.getActiveEditor());
     // @Note: This is triggering an async repaint of the editor.
     if (editor)
@@ -215,21 +217,21 @@ void VSTProcessor::CalculateAutoGain() {
   if (!m_Parameters.AutoGain)
     return;
 
-  double dB = 0;
-  int active = 1;
+  float dB = 0;
+  float active = 1;
   for (auto &FilterBand : FilterBands) {
     dB += FilterBand.ApplyingFilter.IsBypassed() ? 0
                                                  : -FilterBand.Gain->getValue();
     active++;
   }
   dB /= active;
-  m_AutoGainValue = (float)std::pow(10.0, dB / 20.0);
+  m_AutoGainValue = std::powf(10.0f, dB / 20.0f);
 }
 
 void VSTProcessor::CalculateWarmthEffect() {
   const auto alpha = static_cast<float>(m_Parameters.WarmthEffect->getValue());
-  m_AnalogSlew = lerp(1.0, 0.5, alpha);
-  m_AnalogDistortion = lerp(0, 0.5f, alpha);
+  m_AnalogSlew = lerp(0.95, 0.5, alpha);
+  m_AnalogDistortion = lerp(0.01, 0.1f, alpha);
 }
 
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {

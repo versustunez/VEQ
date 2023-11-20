@@ -28,8 +28,8 @@ public:
   State::InstanceState state{id};
 
   Events::EventHandler EventHandler{id};
-  VSTZ::FFT LeftFFT;
-  VSTZ::FFT RightFFT;
+  FFT InputFFT;
+  FFT OutputFFT;
 
   juce::AudioProcessorEditor *Editor{nullptr};
   VSTProcessor* Processor{nullptr};

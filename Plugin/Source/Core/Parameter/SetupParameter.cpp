@@ -58,9 +58,9 @@ void ParameterHandler::SetupParameter() {
   AddBoolParameter("analog", "Analog", false);
   AddParameter({.Name = "analog_strength",
                 .View = "Analog Strength",
-                .Min = 0.0,
+                .Min = 0.01,
                 .Max = 1.0,
-                .Value = 0.15,
+                .Value = 0.25,
                 .ValueToStringCallback = percentCB});
 }
 } // namespace VSTZ::Core
