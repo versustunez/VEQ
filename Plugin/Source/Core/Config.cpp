@@ -16,7 +16,7 @@ Config::~Config() {
 }
 void Config::initConfig() {
   Guard lockGuard(m_guard);
-  m_config = Properties::create("editor-config", "VeClip");
+  m_config = Properties::create("editor-config", "VSTZ/VEQ");
   juce::Desktop::getInstance().setGlobalScaleFactor(1.5);
 }
 void Config::registerEditor(std::string &id, VSTEditor *editor) {
@@ -57,7 +57,6 @@ void Config::initLayout() {
   if (m_isLayoutInit)
     return;
   m_isLayoutInit = true;
-  std::string file = m_config->asString("gui.main", "Bin::MainGui");
 }
 Ref<Theme::Theme> Config::theme() { return m_theme; }
 void Config::initTheme() {
