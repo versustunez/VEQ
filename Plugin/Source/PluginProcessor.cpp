@@ -62,14 +62,13 @@ static float lerp(const float a, const float b, const float alpha) {
 
 static float driveAmount = std::pow(10.0f, 6.0f / 20.0f);
 static float driveAmountReduction = std::pow(10.0f, -6.0f / 20.0f);
+constexpr float clipThreshold = 1.0f;
 
 static float ApplyAnalogDistortion(const float in,
                                    const float distortionAmount = 0.03) {
-  constexpr float clipThreshold = 1.0f;
   const float distortedSignal =
       std::atan(in * driveAmount) * driveAmountReduction;
   const float distortedSample = lerp(in, distortedSignal, distortionAmount);
-
   return std::clamp(distortedSample, -clipThreshold, clipThreshold);
 }
 
@@ -98,20 +97,22 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   auto *dataRight = buffer.getReadPointer(1);
   auto *writeLeft = buffer.getWritePointer(0);
   auto *writeRight = buffer.getWritePointer(1);
-  bool useAutoGain = parameters.AutoGain->getBool();
   bool warmth = parameters.Warmth->getBool();
 
   processor.m_LastValueLeft = dataLeft[0];
   processor.m_LastValueRight = dataRight[0];
 
   for (int i = 0; i < buffer.getNumSamples(); ++i) {
-
     int active = 1;
-    const auto dLeft = static_cast<float>(dataLeft[i]);
-    const auto dRight = static_cast<float>(dataRight[i]);
+    auto dLeft = static_cast<float>(dataLeft[i]);
+    auto dRight = static_cast<float>(dataRight[i]);
     processor.instance->InputFFT.PushSample((dLeft + dRight) * 0.5f);
     float lOut = dLeft;
     float rOut = dRight;
+    if (warmth) {
+      dLeft = ApplyAnalogDistortion(dLeft, processor.m_AnalogDistortion);
+      dRight = ApplyAnalogDistortion(dRight, processor.m_AnalogDistortion);
+    }
     for (auto &band : processor.FilterBands) {
       auto &filter = band.ApplyingFilter;
       if (filter.IsBypassed())
@@ -131,17 +132,10 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
           ApplyAnalogDistortion(rOut, processor.m_AnalogDistortion),
           processor.m_LastValueRight, processor.m_AnalogSlew);
     }
-    writeLeft[i] = lOut;
-    writeRight[i] = rOut;
-  }
-
-  if (useAutoGain) {
-    buffer.applyGain(processor.m_AutoGainValue);
-  }
-
-  for (int i = 0; i < buffer.getNumSamples(); ++i) {
-    processor.instance->OutputFFT.PushSample(
-        static_cast<float>(writeLeft[i] + writeRight[i]) * 0.5f);
+    writeLeft[i] = lOut * processor.m_AutoGainValue;
+    writeRight[i] = rOut * processor.m_AutoGainValue;
+    processor.instance->OutputFFT.PushSample((writeLeft[i] + writeRight[i]) *
+                                             0.5f);
   }
 
   if (processor.instance->InputFFT.IsDirty()) {
@@ -170,12 +164,10 @@ void VSTProcessor::getStateInformation(juce::MemoryBlock &destData) {
 }
 
 void VSTProcessor::setStateInformation(const void *data, int sizeInBytes) {
-  std::unique_ptr<juce::XmlElement> xmlState(
-      getXmlFromBinary(data, sizeInBytes));
+  std::unique_ptr xmlState(getXmlFromBinary(data, sizeInBytes));
   if (xmlState == nullptr)
     return;
   auto *parameters = xmlState->getChildByName(m_TreeState.state.getType());
-  auto name = xmlState->getStringAttribute("name");
   if (parameters)
     m_TreeState.replaceState(juce::ValueTree::fromXml(*parameters));
 }
@@ -195,8 +187,7 @@ void VSTProcessor::prepareToPlay(double sampleRate, int) {
     band.ApplyingFilter.SetSampleRate((float)sampleRate);
   }
 }
-bool VSTProcessor::isBusesLayoutSupported(
-    const juce::AudioProcessor::BusesLayout &layouts) const {
+bool VSTProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
   if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::disabled() ||
       layouts.getMainOutputChannelSet() == juce::AudioChannelSet::disabled())
     return false;
@@ -214,8 +205,10 @@ void VSTProcessor::processBlock(juce::AudioBuffer<double> &buffer,
 }
 
 void VSTProcessor::CalculateAutoGain() {
-  if (!m_Parameters.AutoGain)
+  if (!m_Parameters.AutoGain) {
+    m_AutoGainValue = 1.0;
     return;
+  }
 
   float dB = 0;
   float active = 1;
