@@ -60,8 +60,8 @@ static float lerp(const float a, const float b, const float alpha) {
   return a + alpha * (b - a);
 }
 
-static float driveAmount = std::powf(10.0f, 6.0f / 20.0f);
-static float driveAmountReduction = std::powf(10.0f, -6.0f / 20.0f);
+static float driveAmount = std::pow(10.0f, 6.0f / 20.0f);
+static float driveAmountReduction = std::pow(10.0f, -6.0f / 20.0f);
 
 static float ApplyAnalogDistortion(const float in,
                                    const float distortionAmount = 0.03) {
@@ -225,7 +225,7 @@ void VSTProcessor::CalculateAutoGain() {
     active++;
   }
   dB /= active;
-  m_AutoGainValue = std::powf(10.0f, dB / 20.0f);
+  m_AutoGainValue = std::pow(10.0f, dB / 20.0f);
 }
 
 void VSTProcessor::CalculateWarmthEffect() {
