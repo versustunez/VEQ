@@ -34,6 +34,7 @@ target_compile_definitions(
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
+        VERSION="${CURRENT_VERSION}"
 )
 
 target_include_directories(${PluginName} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Source/)
@@ -49,14 +50,15 @@ target_link_libraries(
         juce::juce_recommended_warning_flags
 )
 
-if ((DEFINED ENV{CI}))
+
+#if ((DEFINED ENV{CI}))
     set (env_file "${PROJECT_SOURCE_DIR}/../.env")
     message ("Writing ENV file for CI: ${env_file}")
 
     # the first call truncates, the rest append
     file(WRITE  "${env_file}" "PROJECT_NAME=${PROJECT_NAME}\n")
-    file(APPEND "${env_file}" "PRODUCT_NAME=${PRODUCT_NAME}\n")
+    file(APPEND "${env_file}" "PRODUCT_NAME=${PROJECT_NAME}\n")
     file(APPEND "${env_file}" "VERSION=${CURRENT_VERSION}\n")
-    file(APPEND "${env_file}" "BUNDLE_ID=${BUNDLE_ID}\n")
-    file(APPEND "${env_file}" "COMPANY_NAME=${COMPANY_NAME}\n")
-endif ()
+    file(APPEND "${env_file}" "BUNDLE_ID=${PluginID}\n")
+    file(APPEND "${env_file}" "COMPANY_NAME=${PluginVendor}\n")
+#endif ()
