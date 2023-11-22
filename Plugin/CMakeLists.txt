@@ -51,7 +51,7 @@ target_link_libraries(
 )
 
 
-#if ((DEFINED ENV{CI}))
+if ((DEFINED ENV{CI}))
     set (env_file "${PROJECT_SOURCE_DIR}/../.env")
     message ("Writing ENV file for CI: ${env_file}")
 
@@ -61,4 +61,4 @@ target_link_libraries(
     file(APPEND "${env_file}" "VERSION=${CURRENT_VERSION}\n")
     file(APPEND "${env_file}" "BUNDLE_ID=${PluginID}\n")
     file(APPEND "${env_file}" "COMPANY_NAME=${PluginVendor}\n")
-#endif ()
+endif ()
