@@ -51,16 +51,14 @@ jobs:
       - name: Read in .env from CMake # see GitHubENV.cmake
         shell: bash
         run: |
-          cat ${{github.workspace}}/.env
-          cat ${{github.workspace}}/.env >> $GITHUB_ENV
+          cat .env
+          cat .env >> $GITHUB_ENV
 
       - name: Set additional env vars for next steps
         shell: bash
         run: |
-          echo "ARTIFACTS_PATH=${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}" >> $GITHUB_ENV
-          echo "VST3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/VST3/${{ env.PRODUCT_NAME }}.vst3" >> $GITHUB_ENV
-          echo "AU_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AU/${{ env.PRODUCT_NAME }}.component" >> $GITHUB_ENV
-          echo "AUV3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AUv3/${{ env.PRODUCT_NAME }}.appex" >> $GITHUB_ENV          
+          echo "ARTIFACTS_PATH=${{ env.BUILD_DIR }}/Plugin/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}" >> $GITHUB_ENV
+          echo "VST3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/VST3/${{ env.PRODUCT_NAME }}.vst3" >> $GITHUB_ENV         
           echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
 
       - name: Codesign (macOS)
@@ -97,7 +95,6 @@ jobs:
           ln -s /Library/Audio/Plug-Ins/Components "packaging/dmg/Your Mac's Component folder"
           ln -s /Library/Audio/Plug-Ins/VST3 "packaging/dmg/Your Mac's VST3 folder"
           mv "${{ env.ARTIFACTS_PATH }}/VST3/${{ env.PRODUCT_NAME }}.vst3" packaging/dmg
-          mv "${{ env.ARTIFACTS_PATH }}/AU/${{ env.PRODUCT_NAME }}.component" packaging/dmg
           
           # Run appdmg to create the .dmg
           cd packaging && appdmg dmg.json "${{ env.ARTIFACT_NAME}}.dmg"
