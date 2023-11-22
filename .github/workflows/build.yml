@@ -31,3 +31,9 @@ jobs:
         shell: bash
         working-directory: build
         run: cmake --build $GITHUB_WORKSPACE/build --config Release --parallel 2
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: VEQ.VST3.${{ matrix.os }}
+          path: ./bin/VEQ.vst3
