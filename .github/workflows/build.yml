@@ -32,12 +32,12 @@ jobs:
           sudo apt install libasound2-dev libjack-jackd2-dev ladspa-sdk libcurl4-openssl-dev  libfreetype6-dev libx11-dev libxcomposite-dev libxcursor-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev mesa-common-dev
 
       - name: Install macOS Deps
-        if: ${{ matrix.name == 'macOS' }}
+        if: runner.os == 'macOS'
         run: brew install osxutils
 
       - name: Import Certificates (macOS)
         uses: apple-actions/import-codesign-certs@v2 # only exists as a tag right now
-        if: ${{ matrix.name == 'macOS' }}
+        if: runner.os == 'macOS'
         with:
           p12-file-base64: ${{ secrets.DEV_ID_APP_CERT }}
           p12-password: ${{ secrets.DEV_ID_APP_PASSWORD }}
@@ -67,13 +67,13 @@ jobs:
 
       - name: Codesign (macOS)
         working-directory: ${{ env.BUILD_DIR }}
-        if: ${{ matrix.name == 'macOS' }}
+        if: runner.os == 'macOS'
         run: |
           # Each plugin must be code signed
           codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.VST3_PATH }}" --deep --strict --options=runtime --timestamp
 
       - name: Add Custom Icons (macOS)
-        if: ${{ matrix.name == 'macOS' }}
+        if: runner.os == 'macOS'
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           # add the icns as its own icon resource (meta!)
@@ -89,7 +89,7 @@ jobs:
           SetFile -a C "${{ env.VST3_PATH }}"
 
       - name: Create DMG, Notarize and Staple (macOS)
-        if: ${{ matrix.name == 'macOS' }}
+        if: runner.os == 'macOS'
         run: |
           npm install -g appdmg
           mkdir -p packaging/dmg
@@ -108,33 +108,33 @@ jobs:
           xcrun stapler staple "${{ env.ARTIFACT_NAME }}.dmg"
 
       - name: Zip
-        if: ${{ matrix.name == 'Linux' }}
+        if: runner.os == 'Linux'
         working-directory: ${{ env.ARTIFACTS_PATH }}
         run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" .
 
       - name: Generate Installer (Windows)
-        if: ${{ matrix.name == 'Windows' }}
+        if: runner.os == 'Windows'
         shell: bash
         run: |
           iscc "packaging\installer.iss"
           mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
 
       - name: Upload Exe (Windows)
-        if: ${{ matrix.name == 'Windows' }}
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.ARTIFACT_NAME }}.exe
           path: '${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe'
 
       - name: Upload Zip (Linux)
-        if: ${{ matrix.name == 'Linux' }}
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.ARTIFACT_NAME }}.zip
           path: '${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.zip'
 
       - name: Upload DMG (MacOS)
-        if: ${{ matrix.name == 'macOS' }}
+        if: runner.os == 'macOS'
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.ARTIFACT_NAME }}.dmg
