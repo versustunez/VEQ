@@ -148,7 +148,7 @@ jobs:
   release:
     if: contains(github.ref, 'tags/v')
     runs-on: ubuntu-latest
-    needs: build_and_test
+    needs: build
 
     steps:
       - name: Get Artifacts
