@@ -36,4 +36,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: VEQ.VST3.${{ matrix.os }}
-          path: ./bin/VEQ.vst3
+          path: ${{github.workspace}}/build/Plugin/VEQ_artefacts/Release/VST3/VEQ.vst3
