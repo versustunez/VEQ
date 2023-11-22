@@ -50,7 +50,7 @@ target_link_libraries(
 )
 
 if ((DEFINED ENV{CI}))
-    set (env_file "${PROJECT_SOURCE_DIR}/.env")
+    set (env_file "${PROJECT_SOURCE_DIR}/../.env")
     message ("Writing ENV file for CI: ${env_file}")
 
     # the first call truncates, the rest append
