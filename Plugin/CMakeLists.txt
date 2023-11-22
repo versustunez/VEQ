@@ -51,5 +51,5 @@ target_link_libraries(
 
 get_target_property(bundle_path ${PluginName}_VST3 JUCE_PLUGIN_ARTEFACT_FILE)
 add_custom_command(TARGET ${PluginName} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${bundle_path} ${CMAKE_SOURCE_DIR}/bin/${PluginName}.vst3/)
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/bin/${PluginName}.vst3/
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${bundle_path} ${CMAKE_SOURCE_DIR}/bin/${PluginName}.vst3/)
