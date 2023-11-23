@@ -110,6 +110,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
+          choco install wixtoolset
           cd packaging
           wix build -o "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.msi" Product.wxs
 
