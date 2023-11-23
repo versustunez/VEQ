@@ -1,6 +1,6 @@
 <img alt="logo" style="display: block; width: 300px; padding: 20px; margin: auto;" src="./Assets/logo.svg"></img>
 
-[![Build](https://github.com/versustunez/VEQ/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/versustunez/VEQ/actions/workflows/build.yml)
+[![Build](https://github.com/versustunez/VEQ/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/versustunez/VEQ/actions/workflows/release.yml)
 
 <img src="./Assets/screenshot.jpg" alt="screenshot" style="display: block; margin: auto;"></img>
 
