@@ -31,7 +31,7 @@ jobs:
 
       - name: Install macOS Deps
         if: runner.os == 'macOS'
-        run: brew install osxutils
+        run: brew install osxutils python-setuptools
 
       - name: Import Certificates (macOS)
         uses: apple-actions/import-codesign-certs@v2 # only exists as a tag right now
