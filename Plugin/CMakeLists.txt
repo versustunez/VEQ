@@ -1,4 +1,4 @@
-project(${PluginName} VERSION 0.0.1)
+project(${PluginName} VERSION ${CURRENT_VERSION})
 
 juce_add_plugin(
         "${PluginName}"

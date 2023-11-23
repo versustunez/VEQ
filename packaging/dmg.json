@@ -13,7 +13,7 @@
   },
   "format": "UDZO",
   "contents": [
-    { "x": 250, "y": 405, "type": "file", "path": "dmg/Pamplejuce Demo.vst3" },
+    { "x": 250, "y": 405, "type": "file", "path": "dmg/VEQ.vst3" },
     { "x": 480, "y": 405, "type": "file", "path": "dmg/Your Mac's VST3 Folder" }
   ]
 }
