@@ -112,8 +112,8 @@ jobs:
         run: |
           choco install wixtoolset
           cd packaging
-          candle Product.wxs -o obj\
-          light obj\*.wixobj -o "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.msi"
+          ${{env.wix}}/bin/candle Product.wxs -o obj\
+          ${{env.wix}}/bin/light obj\*.wixobj -o "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.msi"
 
       - name: Upload Exe (Windows)
         if: runner.os == 'Windows'
