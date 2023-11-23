@@ -110,15 +110,16 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          iscc "packaging\installer.iss"
-          mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
+          cd packaging
+          candle Product.wxs -o obj\
+          light obj\*.wixobj -o "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.msi"
 
       - name: Upload Exe (Windows)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.ARTIFACT_NAME }}.exe
-          path: '${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe'
+          name: ${{ env.ARTIFACT_NAME }}.msi
+          path: '${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.msi'
 
       - name: Upload Zip (Linux)
         if: runner.os == 'Linux'
@@ -150,6 +151,6 @@ jobs:
           # download-artifact puts these files in their own dirs...
           # Using globs sidesteps having to pass the version around
           files: |
-            */*.exe
+            */*.msi
             */*.zip
             */*.dmg

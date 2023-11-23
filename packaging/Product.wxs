@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="{env:PRODUCT_NAME}" Version="{env:VERSION}" Manufacturer="{env:COMPANY_NAME}" UpgradeCode="3F2504E0-4F89-11D3-9A0C-0305E82C3301" >
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <Upgrade Id="3F2504E0-4F89-11D3-9A0C-0305E82C3301">
+      <UpgradeVersion Minimum="0.0.0" OnlyDetect="yes" Property="PREVIOUSVERSIONSINSTALLED" />
+      <UpgradeVersion Minimum="{env:VERSION}" IncludeMinimum="yes" Maximum="{env:VERSION}" IncludeMaximum="yes" Property="CURRENTVERSIONDETECTED" MigrateFeatures="yes" />
+    </Upgrade>
+
+    <Property Id="ALLUSERS" Secure="yes" Value="1" />
+
+    <Media Cabinet="{env:PRODUCT_NAME}-{env:VERSION}-Windows.cab" EmbedCab="yes" Id="1" />
+
+    <Feature Id="ProductFeature" Title="{env:PRODUCT_NAME}" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+
+    <UI />
+
+    <InstallExecuteSequence>
+      <RemoveExistingProducts Before="InstallInitialize" />
+    </InstallExecuteSequence>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="CommonPlugins" Name="VST3">
+          <Directory Id="CommonPRODUCT_NAME_Location" Name="{env:PRODUCT_NAME}">
+            <Component Id="ProductComponent" Guid="3F2504E0-4F89-11D3-9A0C-0305E82C3301">
+              <File Id="ProductFile" Name="{env:PRODUCT_NAME}.vst3" Source="..\Builds\Plugin\$(var.ProjectName)_artefacts\Release\VST3\$(var.ProductName).vst3\*" />
+            </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents">
+      <ComponentRef Id="ProductComponent" />
+    </ComponentGroup>
+  </Fragment>
+</Wix>
