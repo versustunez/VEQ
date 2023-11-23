@@ -106,12 +106,16 @@ jobs:
         working-directory: ${{ env.ARTIFACTS_PATH }}
         run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" .
 
+      - name: Set path for candle and light
+        run: echo "C:\Program Files (x86)\WiX Toolset v3.11\bin" >> $GITHUB_PATH
+        shell: bash
+
       - name: Generate Installer (Windows)
         if: runner.os == 'Windows'
+        shell: bash
         run: |
-          $env:Path += ";C:\Program Files (x86)\WiX Toolset v3.11\bin"
           cd packaging
-          candle Product.wxs -o obj\
+          candle -dPRODUCT_NAME=${{env.PRODUCT_NAME}} -dVERSION=${{env.VERSION}} Product.wxs -o obj/
           light obj\*.wixobj -o "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.msi"
 
       - name: Upload Exe (Windows)
