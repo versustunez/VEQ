@@ -11,6 +11,9 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 env:
   BUILD_TYPE: Release
   BUILD_DIR: Builds
@@ -158,6 +161,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           # download-artifact puts these files in their own dirs...
           # Using globs sidesteps having to pass the version around
