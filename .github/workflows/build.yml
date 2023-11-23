@@ -31,7 +31,7 @@ jobs:
 
       - name: Install macOS Deps
         if: runner.os == 'macOS'
-        run: brew install osxutils python-setuptools
+        run: brew install osxutils
 
       - name: Import Certificates (macOS)
         uses: apple-actions/import-codesign-certs@v2 # only exists as a tag right now
@@ -86,6 +86,7 @@ jobs:
       - name: Create DMG, Notarize and Staple (macOS)
         if: runner.os == 'macOS'
         run: |
+          python3 -m pip install setuptools # Workaround for Node-gyp issues installing appdmg
           npm install -g appdmg
           mkdir -p packaging/dmg
           
