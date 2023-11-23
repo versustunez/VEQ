@@ -106,14 +106,19 @@ jobs:
         working-directory: ${{ env.ARTIFACTS_PATH }}
         run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" .
 
+      - name: Set path for candle and light
+        if: runner.os == 'Windows'
+        env:
+          WIX_PATH: ${{ env.wix }}
+        run: echo "$env:WIX_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: Generate Installer (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          choco install wixtoolset
           cd packaging
-          ${{env.wix}}/bin/candle Product.wxs -o obj\
-          ${{env.wix}}/bin/light obj\*.wixobj -o "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.msi"
+          candle Product.wxs -o obj\
+          light obj\*.wixobj -o "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.msi"
 
       - name: Upload Exe (Windows)
         if: runner.os == 'Windows'
