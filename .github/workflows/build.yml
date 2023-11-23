@@ -103,10 +103,11 @@ jobs:
 
       - name: Zip
         if: runner.os == 'Linux'
-        working-directory: ${{ env.ARTIFACTS_PATH }}
+        working-directory: ${{ env.ARTIFACTS_PATH }}/VST3/${{ env.PRODUCT_NAME }}.vst3/
         run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" .
 
       - name: Set path for candle and light
+        if: runner.os == 'Windows'
         run: echo "C:\Program Files (x86)\WiX Toolset v3.11\bin" >> $GITHUB_PATH
         shell: bash
 
