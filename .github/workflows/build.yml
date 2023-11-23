@@ -115,8 +115,9 @@ jobs:
         shell: bash
         run: |
           cd packaging
-          candle -dPRODUCT_NAME=${{env.PRODUCT_NAME}} -dVERSION=${{env.VERSION}} Product.wxs -o obj/
-          light obj/*.wixobj -o "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.msi"
+          heat.exe dir "${{env.VST3_PATH}}" -cg ProductComponents -gg -sfrag -scom -nologo -sr -out output.wxs
+          candle -dPRODUCT_NAME=${{env.PRODUCT_NAME}} -dVERSION=${{env.VERSION}} Product.wxs output.wxs -o obj/
+          light obj/*.wixobj -o "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.msi" -b "${{env.VST3_PATH}}"
 
       - name: Upload Exe (Windows)
         if: runner.os == 'Windows'
