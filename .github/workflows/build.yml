@@ -1,39 +1,43 @@
 name: Build
-run-name: "Release Build"
-on: [ push, pull_request ]
+run-name: "Build"
+on:
+  pull_request: {}
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUILD_TYPE: Release
+  BUILD_DIR: Builds
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  CMAKE_BUILD_PARALLEL_LEVEL: 3
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macOS-latest ]
 
     steps:
       - uses: actions/checkout@v4
-      - name: Create Build Environment
-        run: cmake -E make_directory ${{github.workspace}}/build
 
-      - name: Install Dependencies
+      - name: Install Linux Dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt update
           sudo apt install libasound2-dev libjack-jackd2-dev ladspa-sdk libcurl4-openssl-dev  libfreetype6-dev libx11-dev libxcomposite-dev libxcursor-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev mesa-common-dev
 
-      - name: Configure CMake
+      - name: Install macOS Deps
+        if: runner.os == 'macOS'
+        run: brew install osxutils
+
+      - name: Configure
         shell: bash
-        working-directory: build
-        run: |
-          cd $GITHUB_WORKSPACE/build
-          cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" .
 
       - name: Build
         shell: bash
-        working-directory: build
-        run: cmake --build $GITHUB_WORKSPACE/build --config Release --parallel 2
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: VEQ.VST3.${{ matrix.os }}
-          path: ./bin/VEQ.vst3
+        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4

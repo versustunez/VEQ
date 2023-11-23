@@ -1,4 +1,4 @@
-project(${PluginName} VERSION 0.0.1)
+project(${PluginName} VERSION ${CURRENT_VERSION})
 
 juce_add_plugin(
         "${PluginName}"
@@ -34,6 +34,7 @@ target_compile_definitions(
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
+        VERSION="${CURRENT_VERSION}"
 )
 
 target_include_directories(${PluginName} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Source/)
@@ -49,7 +50,15 @@ target_link_libraries(
         juce::juce_recommended_warning_flags
 )
 
-get_target_property(bundle_path ${PluginName}_VST3 JUCE_PLUGIN_ARTEFACT_FILE)
-add_custom_command(TARGET ${PluginName} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${bundle_path} ${CMAKE_SOURCE_DIR}/bin/${PluginName}.vst3/)
+
+if ((DEFINED ENV{CI}))
+    set (env_file "${PROJECT_SOURCE_DIR}/../.env")
+    message ("Writing ENV file for CI: ${env_file}")
+
+    # the first call truncates, the rest append
+    file(WRITE  "${env_file}" "PROJECT_NAME=${PROJECT_NAME}\n")
+    file(APPEND "${env_file}" "PRODUCT_NAME=${PROJECT_NAME}\n")
+    file(APPEND "${env_file}" "VERSION=${CURRENT_VERSION}\n")
+    file(APPEND "${env_file}" "BUNDLE_ID=${PluginID}\n")
+    file(APPEND "${env_file}" "COMPANY_NAME=${PluginVendor}\n")
+endif ()

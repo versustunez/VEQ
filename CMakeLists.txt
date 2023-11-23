@@ -7,6 +7,7 @@ set(PluginVendor VstZ)
 # Plugin Codes
 set(PluginVendorCode VstZ) # Exactly 4 Chars!
 set(PluginCode VEEQ) # Exactly 4 Chars!
+set(PluginID "dev.vstz.veq")
 
 # If you need more comfort change it directly in Plugin/CMakeLists.txt
 project(${PluginName})
@@ -47,6 +48,8 @@ update_from_git(juce "https://github.com/juce-framework/JUCE" master)
 option(JUCE_ENABLE_MODULE_SOURCE_GROUPS "Enable Module Source Groups" ON)
 option(JUCE_BUILD_EXTRAS "Build JUCE Extras" OFF)
 option(JUCE_BUILD_EXAMPLES "Build JUCE Examples" OFF)
+
+include (Version)
 
 add_subdirectory(CMake)
 add_subdirectory(${juce_SOURCE_DIR})
