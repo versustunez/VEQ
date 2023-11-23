@@ -103,7 +103,7 @@ jobs:
 
       - name: Zip
         if: runner.os == 'Linux'
-        working-directory: ${{ env.ARTIFACTS_PATH }}/VST3/${{ env.PRODUCT_NAME }}.vst3/
+        working-directory: ${{ env.ARTIFACTS_PATH }}
         run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" .
 
       - name: Set path for candle and light
