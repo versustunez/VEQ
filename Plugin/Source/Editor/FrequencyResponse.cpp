@@ -83,14 +83,18 @@ void FrequencyResponse::PrepareResponse() {
   };
   const double scale =
       Utils::UI::GetDecibelScaleForArray(params.data(), params.size());
-  auto map = [outputMin, outputMax, scale](double input) -> double {
+  auto map = [outputMin, outputMax, scale](const double input) -> double {
     return juce::jmap(input, -scale, scale, outputMin, outputMax);
   };
 
-  int w = getWidth();
-  mags.resize((size_t)w);
-  magsFullResponse.resize((size_t)w);
+  const int w = getWidth();
+  mags.resize(static_cast<size_t>(w));
+  magsFullResponse.resize(static_cast<size_t>(w));
   int activeBands = 1;
+  auto dw = static_cast<double>(w);
+  for (int j = 0; j < w; ++j) {
+    magsFullResponse[j] = 1.0;
+  }
 
   for (int i = 0; i < VSTProcessor::Bands; ++i) {
     auto &band = bands[i];
@@ -101,10 +105,12 @@ void FrequencyResponse::PrepareResponse() {
     }
     activeBands++;
     for (int j = 0; j < w; ++j) {
-      auto freq = juce::mapToLog10(double(j) / (double)w, 20.0, 20000.0);
-      mags[j] = juce::Decibels::gainToDecibels(
-          band.ApplyingFilter.GetMagnitudeForFrequency(freq, sampleRate));
-      magsFullResponse[j] += mags[j];
+      const auto freq =
+          juce::mapToLog10(static_cast<double>(j) / dw, 20.0, 20000.0);
+      auto response =
+          band.ApplyingFilter.GetMagnitudeForFrequency(freq, sampleRate);
+      magsFullResponse[j] += response;
+      mags[j] = juce::Decibels::gainToDecibels(response);
     }
     path.startNewSubPath(bounds.getX(), map(mags[0] * 0.5));
     for (int j = 1; j < w; ++j) {
@@ -113,11 +119,13 @@ void FrequencyResponse::PrepareResponse() {
   }
 
   m_FullResponse.clear();
-  m_FullResponse.startNewSubPath(bounds.getX(),
-                                 map(magsFullResponse[0] / activeBands));
+  m_FullResponse.startNewSubPath(
+      bounds.getX(),
+      map(juce::Decibels::gainToDecibels(magsFullResponse[0] / activeBands)));
   for (int j = 1; j < w; ++j) {
-    m_FullResponse.lineTo(bounds.getX() + j,
-                          map(magsFullResponse[j] / activeBands));
+    m_FullResponse.lineTo(
+        bounds.getX() + j,
+        map(juce::Decibels::gainToDecibels(magsFullResponse[j] / activeBands)));
   }
 }
 } // namespace VSTZ::Editor

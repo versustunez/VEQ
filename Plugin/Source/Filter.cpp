@@ -84,6 +84,28 @@ void Filter::CalculateCoefficients(double gain, double frequency, double q) {
     m_B1 = (-2.0f * tcos) / m_A0;
     m_B2 = (1.0f - alpha * A) / m_A0;
   } break;
+  case Type::LowPass: {
+    double alpha = tsin / (2.0 * q);
+    double denominator = 1.0 + alpha;
+
+    m_B0 = (1.0 - tcos) / 2.0 / denominator;
+    m_B1 = (1.0 - tcos) / denominator;
+    m_B2 = (1.0 - tcos) / 2.0 / denominator;
+    m_A0 = 1.0;
+    m_A1 = -2.0 * tcos / denominator;
+    m_A2 = (1.0 - alpha) / denominator;
+  } break;
+  case Type::HighPass: {
+    double alpha = tsin / (2.0 * q);
+    double denominator = 1.0 + alpha;
+
+    m_B0 = (1.0 + tcos) / 2.0 / denominator;
+    m_B1 = -1.0 * (1.0 + tcos) / denominator;
+    m_B2 = (1.0 + tcos) / 2.0 / denominator;
+    m_A0 = 1.0;
+    m_A1 = -2.0 * tcos / denominator;
+    m_A2 = (1.0 - alpha) / denominator;
+  } break;
   default: Reset();
   }
 }

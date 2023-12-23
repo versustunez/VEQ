@@ -35,7 +35,7 @@ void EQUI::Init() {
   }
   int val = (int)m_Type->getValue();
 
-  m_Q->setVisible(val == 2);
+  m_Q->setVisible(val != 0);
   m_Frequency->setVisible(val != 0);
   m_Gain->setVisible(val != 0);
 

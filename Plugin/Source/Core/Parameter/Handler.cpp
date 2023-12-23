@@ -48,7 +48,7 @@ void ParameterHandler::AddBoolParameter(const std::string &name,
       .Min = 0.0,
       .Max = 1.0,
       .Value = defaultValue ? 1.0 : 0.0,
-      .Type = ParameterTypes::Boolean,
+      .Type = Boolean,
   });
 }
 
