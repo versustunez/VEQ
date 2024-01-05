@@ -1,8 +1,6 @@
 #pragma once
 
-#include "BandListener.h"
 #include "GUI/Components/VComponent.h"
-#include "ParameterStruct.h"
 #include "PluginProcessor.h"
 
 namespace VSTZ::Editor {

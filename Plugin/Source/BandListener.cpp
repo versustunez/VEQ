@@ -16,6 +16,9 @@ void BandListener::Handle(Events::Event *event) {
     case 3:
       m_Band->ApplyingFilter.SetFilterType(Filter::Type::HighShelf);
       break;
+    case 4: m_Band->ApplyingFilter.SetFilterType(Filter::Type::LowPass); break;
+    case 5: m_Band->ApplyingFilter.SetFilterType(Filter::Type::HighPass); break;
+
     default: m_Band->ApplyingFilter.SetFilterType(Filter::Type::NO); break;
     }
   }

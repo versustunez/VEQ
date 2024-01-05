@@ -5,7 +5,6 @@
 #include "PluginEditor.h"
 
 #include <FMT.h>
-#include <algorithm>
 
 VSTProcessor::VSTProcessor()
     : AudioProcessor(
@@ -26,7 +25,7 @@ VSTProcessor::VSTProcessor()
       instance->handler->GetParameter("analog_strength");
 
   m_Parameters.WarmthEffect->RegisterChangeFunction(
-      [this](double) { CalculateWarmthEffect(); });
+      [this](const float value) { m_AnalogMode.CalculateWarmEffect(value); });
 
   m_Parameters.AutoGain->RegisterChangeFunction(
       [&](double) { CalculateAutoGain(); });
@@ -53,31 +52,7 @@ VSTProcessor::VSTProcessor()
         [this](double) { CalculateAutoGain(); });
   }
   CalculateAutoGain();
-  CalculateWarmthEffect();
-}
-
-static float lerp(const float a, const float b, const float alpha) {
-  return a + alpha * (b - a);
-}
-
-static float driveAmount = std::pow(10.0f, 6.0f / 20.0f);
-static float driveAmountReduction = std::pow(10.0f, -6.0f / 20.0f);
-constexpr float clipThreshold = 1.0f;
-
-static float ApplyAnalogDistortion(const float in,
-                                   const float distortionAmount = 0.03) {
-  const float distortedSignal =
-      std::atan(in * driveAmount) * driveAmountReduction;
-  const float distortedSample = lerp(in, distortedSignal, distortionAmount);
-  return std::clamp(distortedSample, -clipThreshold, clipThreshold);
-}
-
-static float ApplySlewLimiter(const float in, float &lastValue,
-                              const float slewRate = 0.75) {
-  float diff = in - lastValue;
-  diff = std::clamp(diff, -slewRate, slewRate);
-  lastValue = lastValue + diff;
-  return lastValue;
+  m_AnalogMode.CalculateWarmEffect(m_Parameters.WarmthEffect->getValue());
 }
 
 template <typename T>
@@ -98,9 +73,7 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   auto *writeLeft = buffer.getWritePointer(0);
   auto *writeRight = buffer.getWritePointer(1);
   bool warmth = parameters.Warmth->getBool();
-
-  processor.m_LastValueLeft = dataLeft[0];
-  processor.m_LastValueRight = dataRight[0];
+  processor.m_AnalogMode.ResetSlew(dataLeft[0], dataRight[0]);
 
   for (int i = 0; i < buffer.getNumSamples(); ++i) {
     int active = 1;
@@ -110,8 +83,10 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
     float lOut = dLeft;
     float rOut = dRight;
     if (warmth) {
-      dLeft = ApplyAnalogDistortion(dLeft, processor.m_AnalogDistortion);
-      dRight = ApplyAnalogDistortion(dRight, processor.m_AnalogDistortion);
+      const auto processed =
+          processor.m_AnalogMode.ApplyPreDistortion(dLeft, dRight);
+      dLeft = processed.Left;
+      dRight = processed.Right;
     }
     for (auto &band : processor.FilterBands) {
       auto &filter = band.ApplyingFilter;
@@ -125,12 +100,10 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
     rOut /= static_cast<float>(active);
 
     if (warmth) {
-      lOut = ApplySlewLimiter(
-          ApplyAnalogDistortion(lOut, processor.m_AnalogDistortion),
-          processor.m_LastValueLeft, processor.m_AnalogSlew);
-      rOut = ApplySlewLimiter(
-          ApplyAnalogDistortion(rOut, processor.m_AnalogDistortion),
-          processor.m_LastValueRight, processor.m_AnalogSlew);
+      const auto processed =
+          processor.m_AnalogMode.ApplyPreDistortion(lOut, rOut);
+      lOut = processed.Left;
+      rOut = processed.Right;
     }
     writeLeft[i] = lOut * processor.m_AutoGainValue;
     writeRight[i] = rOut * processor.m_AutoGainValue;
@@ -149,6 +122,10 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
 void VSTProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                 juce::MidiBuffer &) {
   ProcessBlock(buffer, *this);
+}
+
+void VSTProcessor::updateTrackProperties(const TrackProperties& properties) {
+  instance->state.TrackColor = properties.colour;
 }
 
 juce::AudioProcessorEditor *VSTProcessor::createEditor() {
@@ -186,6 +163,7 @@ void VSTProcessor::prepareToPlay(double sampleRate, int) {
   for (auto &band : FilterBands) {
     band.ApplyingFilter.SetSampleRate((float)sampleRate);
   }
+  m_AnalogMode.SetupFilter(sampleRate);
 }
 bool VSTProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
   if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::disabled() ||
@@ -205,11 +183,10 @@ void VSTProcessor::processBlock(juce::AudioBuffer<double> &buffer,
 }
 
 void VSTProcessor::CalculateAutoGain() {
-  if (!m_Parameters.AutoGain) {
+  if (!m_Parameters.AutoGain->getBool()) {
     m_AutoGainValue = 1.0;
     return;
   }
-
   float dB = 0;
   float active = 1;
   for (auto &FilterBand : FilterBands) {
@@ -219,12 +196,6 @@ void VSTProcessor::CalculateAutoGain() {
   }
   dB /= active;
   m_AutoGainValue = std::pow(10.0f, dB / 20.0f);
-}
-
-void VSTProcessor::CalculateWarmthEffect() {
-  const auto alpha = static_cast<float>(m_Parameters.WarmthEffect->getValue());
-  m_AnalogSlew = lerp(0.95, 0.5, alpha);
-  m_AnalogDistortion = lerp(0.01, 0.1f, alpha);
 }
 
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {

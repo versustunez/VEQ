@@ -4,8 +4,8 @@
 #include "Events/EventHandler.h"
 #include "JuceHeader.h"
 #include "ParameterStruct.h"
-#include "Audio/AutoGain.h"
 
+#include <Audio/AnalogMode.h>
 #include <Core/Parameter/Parameter.h>
 
 namespace VSTZ::Core {
@@ -23,6 +23,7 @@ public:
 
   void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override;
   void processBlock(juce::AudioBuffer<double> &, juce::MidiBuffer &) override;
+  void updateTrackProperties(const TrackProperties& properties) override;
 
   juce::AudioProcessorEditor *createEditor() override;
   bool hasEditor() const override { return true; }
@@ -47,16 +48,14 @@ public:
   void setStateInformation(const void *data, int sizeInBytes) override;
 
   void CalculateAutoGain();
-  void CalculateWarmthEffect();
-public:
+
+  VSTZ::Parameters &GetParameters() { return m_Parameters; }
+
   float m_AutoGainValue{1};
-  float m_AnalogSlew{1};
-  float m_AnalogDistortion{0.03};
-  VSTZ::Parameters& GetParameters() { return m_Parameters; }
   float m_LastValueLeft{0};
   float m_LastValueRight{0};
 
-public:
+  VSTZ::AnalogMode m_AnalogMode;
   VSTZ::Core::Instance *instance = nullptr;
   constexpr static int Bands{8};
   VSTZ::Band FilterBands[Bands]{};

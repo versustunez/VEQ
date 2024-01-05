@@ -3,7 +3,7 @@ namespace VSTZ {
 
 class Filter {
 public:
-  enum class Type { LowShelf, HighShelf, Peak, NO };
+  enum class Type { LowShelf, HighShelf, Peak, LowPass, HighPass, NO };
 
   void SetFilterType(Type type);
   void SetSampleRate(double sampleRate);
