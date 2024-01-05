@@ -9,7 +9,6 @@ namespace VSTZ::Editor {
 class Spectrum final : public GUI::VComponent {
 public:
   explicit Spectrum(const InstanceID id, FFT *usingFFT) : m_ID(id), m_FFT(usingFFT) {
-    m_SplineData.resize(FFT::GetFFTSize());
   }
   void createFFTPath(double sampleRate, int fftSize);
   void paint(juce::Graphics &g) override;
@@ -19,6 +18,10 @@ public:
     m_SpectrumColor = juce::Colour::fromFloatRGBA(red, green, blue, alpha);
   }
 
+  void SetColor(juce::Colour color) {
+    m_SpectrumColor = color;
+  } 
+
 protected:
   bool PrepareFFT();
 
@@ -26,7 +29,6 @@ protected:
   InstanceID m_ID;
   FFT *m_FFT;
   float m_FFTData[FFT::GetFFTSize()]{};
-  juce::Array<juce::Point<double>> m_SplineData{};
   juce::Colour m_SpectrumColor =
       juce::Colour::fromFloatRGBA(0.0f, 1.0f, 0.4f, 0.5f);
   juce::Path m_PathTmp;

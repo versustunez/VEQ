@@ -124,6 +124,10 @@ void VSTProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   ProcessBlock(buffer, *this);
 }
 
+void VSTProcessor::updateTrackProperties(const TrackProperties& properties) {
+  instance->state.TrackColor = properties.colour;
+}
+
 juce::AudioProcessorEditor *VSTProcessor::createEditor() {
   return new VSTEditor(*this, m_Id);
 }

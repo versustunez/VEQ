@@ -1,6 +1,8 @@
 #include "UI.h"
 
+#include "Core/Config.h"
 #include "Editor/EQUI.h"
+#include "GUI/Theme/Theme.h"
 
 #include <FMT.h>
 
@@ -32,9 +34,10 @@ void UI::Init() {
   }
   m_SpectrumBefore.Create(m_ID, &m_Instance->InputFFT);
   m_SpectrumAfter.Create(m_ID, &m_Instance->OutputFFT);
-  m_SpectrumBefore->SetColor(0.2f, 0.2f, 0.2f, .4f);
-  m_SpectrumAfter->SetColor(0.15f, 0.25f, 0.35f, .6f);
-
+  // get Colors from config
+  m_SpectrumBefore->SetColor(Core::Config::get().theme()->getColor(Theme::Colors::accent).darker(0.7));
+  m_SpectrumAfter->SetColor(Core::Config::get().theme()->getColor(Theme::Colors::accent));
+  
   m_FrequencyResponse.Create(m_ID);
 
   m_FrequencyPad.Create(m_ID);

@@ -23,6 +23,7 @@ public:
 
   void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override;
   void processBlock(juce::AudioBuffer<double> &, juce::MidiBuffer &) override;
+  void updateTrackProperties(const TrackProperties& properties) override;
 
   juce::AudioProcessorEditor *createEditor() override;
   bool hasEditor() const override { return true; }

@@ -6,7 +6,6 @@ namespace VSTZ::Editor {
 
 constexpr float slopeDecibelsPerOctave = -3.0f;
 constexpr float lowestFrequency = 20.0f;
-constexpr float dynamic = 30.0f;
 static const float lowestFrequencyLog = std::log2(1200.0f);
 
 static float indexToX(const float index, const float sampleRate,
@@ -44,11 +43,11 @@ void Spectrum::paint(juce::Graphics &g) {
     createFFTPath(sampleRate, fftSize);
   }
 
-  g.setColour(m_SpectrumColor);
+  g.setColour(m_SpectrumColor.withAlpha(0.2f));
   g.fillPath(m_Path);
 
-  g.setColour(m_SpectrumColor.brighter(3));
-  g.strokePath(m_Path, juce::PathStrokeType(0.1f));
+  g.setColour(m_SpectrumColor);
+  g.strokePath(m_Path, juce::PathStrokeType(1.0f));
 }
 
 void Spectrum::resized() {
