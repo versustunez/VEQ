@@ -41,7 +41,7 @@ void ParameterHandler::SetupParameter() {
                   .ValueToStringCallback = typeCB});
     AddParameter({.Name = fmt::format("Band{}_gain", i),
                   .View = fmt::format("Band {} Gain", i),
-                  .Min = -30.0,
+                  .Min = -12.0,
                   .Max = 30.0,
                   .Value = 0.0,
                   .ValueToStringCallback = decibelCB});

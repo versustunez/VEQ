@@ -13,9 +13,30 @@ static double lerp(const double a, const double b, const double alpha) {
 }
 
 static double ApplyAnalogDistortion(const double in) {
-  const double distortedSignal =
-      std::atan(in * driveAmount) * driveAmountReduction;
-  return std::clamp(distortedSignal, -clipThreshold, clipThreshold);
+  constexpr double curvePct = 0;
+  constexpr double curveA = 1.5 + curvePct;
+  constexpr double curveB = -(curvePct + curvePct);
+  constexpr double curveC = curvePct - 0.5;
+  constexpr double curveD =
+      0.0625 - curvePct * 0.25 + (curvePct * curvePct) * 0.25;
+
+  double input = in * driveAmount;
+  const double sign = input > 0 ? 1 : -1;
+
+  const double s1 = std::abs(input);
+  const double s2 = s1 * s1;
+  const double s3 = s2 * s1;
+  const double s4 = s2 * s2;
+
+  if (s1 >= 2.0) {
+    input = 0;
+  } else if (s1 > 1.0) {
+    input = (2 * s1) - s2;
+  } else {
+    input = (curveA * s1) + (curveB * s2) + (curveC * s3) -
+            (curveD * (s2 - (2.0 * s3) + s4));
+  }
+  return input * sign * driveAmountReduction;
 }
 
 static double ApplySlewLimiter(const double in, double &lastValue,
@@ -38,12 +59,10 @@ AnalogChannel AnalogMode::ApplyPreDistortion(const double inLeft,
 
 AnalogChannel AnalogMode::ApplyPostDistortion(const double inL,
                                               const double inR) {
-  return {ApplySlewLimiter(
-              lerp(inL, ApplyAnalogDistortion(inL), m_DistortionAmount),
-              m_LastValueLeft, m_AnalogSlew),
-          ApplySlewLimiter(
-              lerp(inR, ApplyAnalogDistortion(inR), m_DistortionAmount),
-              m_LastValueRight, m_AnalogSlew)};
+  return {ApplySlewLimiter(std::clamp(inL, -1.0, 1.0), m_LastValueLeft,
+                           m_AnalogSlew),
+          ApplySlewLimiter(std::clamp(inR, -1.0, 1.0), m_LastValueRight,
+                           m_AnalogSlew)};
 }
 
 void AnalogMode::SetupFilter(const double sR) {
