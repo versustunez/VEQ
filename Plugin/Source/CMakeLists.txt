@@ -1,10 +1,9 @@
+add_subdirectory(Audio)
 add_subdirectory(Core)
 add_subdirectory(Events)
 add_subdirectory(GUI)
 add_subdirectory(Editor)
 add_sources(
-        Audio/AnalogMode.cpp
-        Audio/FFT.cpp
         BandListener.cpp
         PluginEditor.cpp
         PluginProcessor.cpp

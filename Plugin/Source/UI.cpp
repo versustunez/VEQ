@@ -23,6 +23,8 @@ void UI::Init() {
 
   m_WarmthStrength.Create("analog_strength", "Strength", m_ID);
 
+  m_DriveMeter.Create(&m_Instance->Processor->m_AnalogMode.DriveTarget);
+
   m_Logo.Create(m_ID);
   m_Tab.Create(juce::TabbedButtonBar::Orientation::TabsAtBottom);
   m_Tab->setOutline(0);
@@ -50,6 +52,7 @@ void UI::Init() {
   addAndMakeVisible(*m_AutoGain);
   addAndMakeVisible(*m_Warmth);
   addAndMakeVisible(*m_WarmthStrength);
+  addAndMakeVisible(*m_DriveMeter);
   addAndMakeVisible(*m_SpectrumBefore);
   addAndMakeVisible(*m_SpectrumAfter);
   addAndMakeVisible(*m_DecibelMeter);
@@ -62,6 +65,7 @@ void UI::resized() {
   m_AutoGain->setBounds(getWidth() - 140, 0, 70, 40);
   m_Warmth->setBounds(getWidth() - 210, 0, 70, 20);
   m_WarmthStrength->setBounds(getWidth() - 210, 20, 70, 20);
+  m_DriveMeter->setBounds(getWidth() - 220, 0, 10, 40);
   m_Logo->setBounds(5, 5, 100, 30);
   int specHeight = getHeight() - (TabHeight + 40);
   juce::Rectangle<int> newBounds{20, 40, getWidth() - 20, specHeight};

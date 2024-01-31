@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Instance.h"
+#include "Editor/DriveMeter.h"
 #include "Editor/FrequencyResponse.h"
 #include "Editor/Logo.h"
 #include "Editor/Spectrum.h"
@@ -33,6 +34,7 @@ protected:
   Scope<Editor::XYPad> m_FrequencyPad;
   Scope<juce::TabbedComponent> m_Tab;
   Scope<Editor::DecibelMeter> m_DecibelMeter;
+  Scope<Editor::DriveMeter> m_DriveMeter;
 
   Core::Instance *m_Instance;
 };

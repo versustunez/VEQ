@@ -73,8 +73,11 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   auto *writeLeft = buffer.getWritePointer(0);
   auto *writeRight = buffer.getWritePointer(1);
   bool warmth = parameters.Warmth->getBool();
-  processor.m_AnalogMode.ResetSlew(dataLeft[0], dataRight[0]);
-
+  //processor.m_AnalogMode.ResetSlew(dataLeft[0], dataRight[0]);
+  if (warmth) {
+    processor.m_AnalogMode.DriveTarget.CalculateDrive(
+        dataLeft, dataRight, static_cast<size_t>(buffer.getNumSamples()));
+  }
   for (int i = 0; i < buffer.getNumSamples(); ++i) {
     int active = 1;
     auto dLeft = static_cast<float>(dataLeft[i]);
@@ -83,6 +86,7 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
     float lOut = dLeft;
     float rOut = dRight;
     if (warmth) {
+      processor.m_AnalogMode.DriveTarget.NextDrive();
       const auto processed =
           processor.m_AnalogMode.ApplyPreDistortion(dLeft, dRight);
       dLeft = processed.Left;
@@ -124,7 +128,7 @@ void VSTProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   ProcessBlock(buffer, *this);
 }
 
-void VSTProcessor::updateTrackProperties(const TrackProperties& properties) {
+void VSTProcessor::updateTrackProperties(const TrackProperties &properties) {
   instance->state.TrackColor = properties.colour;
 }
 

@@ -1,18 +1,16 @@
 #include "AnalogMode.h"
 
-#include <algorithm>
+#include <JuceHeader.h>
 #include <cmath>
 
 namespace VSTZ {
-static double driveAmount = std::pow(10.0f, 6.0f / 20.0f);
-static double driveAmountReduction = std::pow(10.0f, -6.0f / 20.0f);
-constexpr double clipThreshold = 1.0f;
 
 static double lerp(const double a, const double b, const double alpha) {
   return a + alpha * (b - a);
 }
 
-static double ApplyAnalogDistortion(const double in) {
+static double ApplyAnalogDistortion(const double in, const double driveAmount,
+                                    const double driveAmountReduction) {
   constexpr double curvePct = 0;
   constexpr double curveA = 1.5 + curvePct;
   constexpr double curveB = -(curvePct + curvePct);
@@ -39,30 +37,33 @@ static double ApplyAnalogDistortion(const double in) {
   return input * sign * driveAmountReduction;
 }
 
-static double ApplySlewLimiter(const double in, double &lastValue,
-                               const double slewRate = 0.75) {
-  double diff = in - lastValue;
-  diff = std::clamp(diff, -slewRate, slewRate);
-  lastValue = lastValue + diff;
+static double ApplyFirstOrderLowPass(const double in, double &lastValue,
+                                     const double alpha) {
+  lastValue = alpha * lastValue + (1.0 - alpha) * in;
   return lastValue;
 }
 
 AnalogChannel AnalogMode::ApplyPreDistortion(const double inLeft,
                                              const double inRight) {
 
-  return {lerp(inLeft, ApplyAnalogDistortion(m_AnalogFilter.ApplyLeft(inLeft)),
+  return {lerp(inLeft,
+               ApplyAnalogDistortion(m_AnalogFilter.ApplyLeft(inLeft),
+                                     DriveTarget.GetDrive(),
+                                     DriveTarget.GetDriveReduction()),
                m_DistortionAmount),
           lerp(inRight,
-               ApplyAnalogDistortion(m_AnalogFilter.ApplyRight(inRight)),
+               ApplyAnalogDistortion(m_AnalogFilter.ApplyRight(inRight),
+                                     DriveTarget.GetDrive(),
+                                     DriveTarget.GetDriveReduction()),
                m_DistortionAmount)};
 }
 
 AnalogChannel AnalogMode::ApplyPostDistortion(const double inL,
                                               const double inR) {
-  return {ApplySlewLimiter(std::clamp(inL, -1.0, 1.0), m_LastValueLeft,
-                           m_AnalogSlew),
-          ApplySlewLimiter(std::clamp(inR, -1.0, 1.0), m_LastValueRight,
-                           m_AnalogSlew)};
+  return {lerp(inL, ApplyFirstOrderLowPass(inL, m_LastValueLeft, m_Alpha),
+               m_AlphaMix),
+          lerp(inR, ApplyFirstOrderLowPass(inR, m_LastValueRight, m_Alpha),
+               m_AlphaMix)};
 }
 
 void AnalogMode::SetupFilter(const double sR) {
@@ -70,15 +71,14 @@ void AnalogMode::SetupFilter(const double sR) {
   m_AnalogFilter.SetFilterType(Filter::Type::LowPass);
   // the AnalogFilter needs to cut to avoid Aliasing ;)
   m_AnalogFilter.CalculateCoefficients(48.0, 500, 0.707);
+
+  // we have to see :)
+  m_Alpha = std::exp(-2.0 * juce::MathConstants<double>::pi * 10000 / sR);
 }
 
 void AnalogMode::CalculateWarmEffect(float value) {
-  m_AnalogSlew = lerp(0.95, 0.5, value);
-  m_DistortionAmount = lerp(0.01, 0.1f, value);
-}
-void AnalogMode::ResetSlew(float left, float right) {
-  m_LastValueLeft = left;
-  m_LastValueRight = right;
+  m_AlphaMix = lerp(0.1, 0.9, value);
+  m_DistortionAmount = lerp(0.01, 0.15f, value);
 }
 
 } // namespace VSTZ

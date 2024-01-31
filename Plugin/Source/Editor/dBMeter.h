@@ -6,7 +6,6 @@
 namespace VSTZ::Editor {
 class DecibelMeter : public GUI::VComponent, Events::Handler {
 public:
-public:
   explicit DecibelMeter(InstanceID id);
   ~DecibelMeter() override;
   void paint(juce::Graphics &g) override;

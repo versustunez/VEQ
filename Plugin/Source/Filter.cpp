@@ -112,7 +112,7 @@ void Filter::CalculateCoefficients(double gain, double frequency, double q) {
 
 double Filter::GetMagnitudeForFrequency(double frequency, double) const {
 
-  double omega = juce::MathConstants<double>::twoPi * frequency / m_SampleRate;
+  double omega = twoPi * frequency / m_SampleRate;
 
   std::complex<double> numerator =
       m_B0 + m_B1 * std::exp(std::complex<double>(0, -omega)) +
