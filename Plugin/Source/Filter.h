@@ -16,6 +16,8 @@ public:
 
   double GetMagnitudeForFrequency(double frequency, double sampleRate) const;
 
+  double GetSampleRate() const { return m_SampleRate; }
+
 protected:
   Type m_Type{Type::NO};
   double m_SampleRate{44100.0f};

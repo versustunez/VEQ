@@ -58,12 +58,11 @@ AnalogChannel AnalogMode::ApplyPreDistortion(const double inLeft,
                m_DistortionAmount)};
 }
 
-AnalogChannel AnalogMode::ApplyPostDistortion(const double inL,
-                                              const double inR) {
-  return {lerp(inL, ApplyFirstOrderLowPass(inL, m_LastValueLeft, m_Alpha),
-               m_AlphaMix),
-          lerp(inR, ApplyFirstOrderLowPass(inR, m_LastValueRight, m_Alpha),
-               m_AlphaMix)};
+AnalogChannel AnalogMode::ApplyPost(const double inL, const double inR) {
+  return {
+      m_SmoothFilter.ApplyLeft(inL),
+      m_SmoothFilter.ApplyRight(inR),
+  };
 }
 
 void AnalogMode::SetupFilter(const double sR) {
@@ -72,13 +71,15 @@ void AnalogMode::SetupFilter(const double sR) {
   // the AnalogFilter needs to cut to avoid Aliasing ;)
   m_AnalogFilter.CalculateCoefficients(48.0, 500, 0.707);
 
-  // we have to see :)
-  m_Alpha = std::exp(-2.0 * juce::MathConstants<double>::pi * 10000 / sR);
+  m_SmoothFilter.SetSampleRate(sR);
+  m_SmoothFilter.SetFilterType(Filter::Type::HighShelf);
+  m_SmoothFilter.CalculateCoefficients(m_Gain, 18000, 0.45);
 }
 
-void AnalogMode::CalculateWarmEffect(float value) {
-  m_AlphaMix = lerp(0.1, 0.9, value);
-  m_DistortionAmount = lerp(0.01, 0.15f, value);
+void AnalogMode::CalculateWarmEffect(const float value) {
+  m_Gain = lerp(-0.05, -1.5, value);
+  m_SmoothFilter.CalculateCoefficients(m_Gain, 18000, 0.45);
+  m_DistortionAmount = lerp(0.01, 0.12f, value);
 }
 
 } // namespace VSTZ

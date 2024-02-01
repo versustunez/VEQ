@@ -8,19 +8,16 @@ struct AnalogChannel {
 };
 struct AnalogMode {
   AnalogChannel ApplyPreDistortion(double inLeft, double inRight);
-  AnalogChannel ApplyPostDistortion(double inL, double inR);
+  AnalogChannel ApplyPost(double inL, double inR);
 
   void SetupFilter(double sR);
   void CalculateWarmEffect(float value);
 
-
   TargetDrive DriveTarget;
 
   Filter m_AnalogFilter{};
+  Filter m_SmoothFilter{};
   double m_DistortionAmount{0.0f};
-  double m_Alpha{0.0f};
-  double m_AlphaMix{0.0f};
-
-  double m_LastValueLeft{0}, m_LastValueRight{0};
+  double m_Gain{-1.0f};
 };
 } // namespace VSTZ
