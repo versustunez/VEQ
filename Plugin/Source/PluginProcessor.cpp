@@ -86,7 +86,6 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
     float lOut = dLeft;
     float rOut = dRight;
     if (warmth) {
-      processor.m_AnalogMode.DriveTarget.NextDrive();
       const auto processed =
           processor.m_AnalogMode.ApplyPreDistortion(dLeft, dRight);
       dLeft = processed.Left;
