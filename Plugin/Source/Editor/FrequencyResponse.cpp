@@ -8,6 +8,8 @@
 #include <FMT.h>
 
 namespace VSTZ::Editor {
+
+constexpr size_t SizeResponse = 1000;
 FrequencyResponse::FrequencyResponse(InstanceID id) : m_ID(id) {
   auto instance = Core::Instance::get(m_ID);
 
@@ -56,19 +58,52 @@ void FrequencyResponse::paint(juce::Graphics &g) {
   g.strokePath(m_FullResponse, juce::PathStrokeType(1.0f));
 }
 
-void FrequencyResponse::resized() { PrepareResponse(); }
+void FrequencyResponse::resized() {
+  if (m_MagsFullResponse.empty())
+    CreateResponseArray();
+  PrepareResponse();
+}
 
 void FrequencyResponse::Handle(Events::Event *) {
+  CreateResponseArray();
   PrepareResponse();
   repaint();
 }
 
-void FrequencyResponse::PrepareResponse() {
-  std::vector<double> mags;
-  std::vector<double> magsFullResponse;
+void FrequencyResponse::CreateResponseArray() {
+  m_Mags.resize(SizeResponse, {0, 0, 0, 0, 0, 0, 0, 0});
+  m_MagsFullResponse.resize(SizeResponse);
+  double sampleRate = Core::Config::get().sampleRate;
   auto *instance = Core::Instance::get(m_ID);
   auto &bands = instance->Processor->FilterBands;
-  double sampleRate = Core::Config::get().sampleRate;
+
+  const size_t w = SizeResponse;
+  const double dw = SizeResponse;
+
+  for (int j = 0; j < w; ++j) {
+    m_MagsFullResponse[j] = 1.0;
+  }
+
+  for (int i = 0; i < VSTProcessor::Bands; ++i) {
+    auto &band = bands[i];
+    for (int j = 0; j < w; ++j) {
+      const auto freq =
+          juce::mapToLog10(static_cast<double>(j) / dw, 20.0, 20000.0);
+      auto response =
+          band.ApplyingFilter.GetMagnitudeForFrequency(freq, sampleRate);
+      m_MagsFullResponse[j] += response;
+      m_Mags[j][i] = juce::Decibels::gainToDecibels(response);
+    }
+  }
+}
+
+static float remap(const float i, const float w) {
+  return std::lerp(0.0f, w, i / SizeResponse);
+}
+
+void FrequencyResponse::PrepareResponse() {
+  auto *instance = Core::Instance::get(m_ID);
+  auto &bands = instance->Processor->FilterBands;
 
   auto bounds = getLocalBounds();
   const double outputMin = bounds.getBottom();
@@ -87,14 +122,8 @@ void FrequencyResponse::PrepareResponse() {
     return juce::jmap(input, -scale, scale, outputMin, outputMax);
   };
 
-  const int w = getWidth();
-  mags.resize(static_cast<size_t>(w));
-  magsFullResponse.resize(static_cast<size_t>(w));
+  const auto dw = static_cast<float>(bounds.getWidth());
   int activeBands = 1;
-  auto dw = static_cast<double>(w);
-  for (int j = 0; j < w; ++j) {
-    magsFullResponse[j] = 1.0;
-  }
 
   for (int i = 0; i < VSTProcessor::Bands; ++i) {
     auto &band = bands[i];
@@ -104,28 +133,20 @@ void FrequencyResponse::PrepareResponse() {
       continue;
     }
     activeBands++;
-    for (int j = 0; j < w; ++j) {
-      const auto freq =
-          juce::mapToLog10(static_cast<double>(j) / dw, 20.0, 20000.0);
-      auto response =
-          band.ApplyingFilter.GetMagnitudeForFrequency(freq, sampleRate);
-      magsFullResponse[j] += response;
-      mags[j] = juce::Decibels::gainToDecibels(response);
-    }
-    path.startNewSubPath(bounds.getX(), map(mags[0] * 0.5));
-    for (int j = 1; j < w; ++j) {
-      path.lineTo(bounds.getX() + j, map(mags[j] * 0.5));
+    path.startNewSubPath(bounds.getX(), map(m_Mags[0][i] * 0.5));
+    for (int j = 1; j < SizeResponse; ++j) {
+      path.lineTo(bounds.getX() + remap(j, dw), map(m_Mags[j][i] * 0.5));
     }
   }
 
   m_FullResponse.clear();
   m_FullResponse.startNewSubPath(
       bounds.getX(),
-      map(juce::Decibels::gainToDecibels(magsFullResponse[0] / activeBands)));
-  for (int j = 1; j < w; ++j) {
-    m_FullResponse.lineTo(
-        bounds.getX() + j,
-        map(juce::Decibels::gainToDecibels(magsFullResponse[j] / activeBands)));
+      map(juce::Decibels::gainToDecibels(m_MagsFullResponse[0] / activeBands)));
+  for (int j = 1; j < SizeResponse; ++j) {
+    m_FullResponse.lineTo(bounds.getX() + remap(j, dw),
+                          map(juce::Decibels::gainToDecibels(
+                              m_MagsFullResponse[j] / activeBands)));
   }
 }
 } // namespace VSTZ::Editor

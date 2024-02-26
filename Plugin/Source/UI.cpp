@@ -4,11 +4,9 @@
 #include "Editor/EQUI.h"
 #include "GUI/Theme/Theme.h"
 
-#include <FMT.h>
-
 namespace VSTZ {
 
-constexpr static int TabHeight = 120;
+constexpr static int TabHeight = 80;
 
 void UI::Init() {
   m_Instance = Core::Instance::get(m_ID);
@@ -26,24 +24,19 @@ void UI::Init() {
   m_DriveMeter.Create(&m_Instance->Processor->m_AnalogMode.DriveTarget);
 
   m_Logo.Create(m_ID);
-  m_Tab.Create(juce::TabbedButtonBar::Orientation::TabsAtBottom);
-  m_Tab->setOutline(0);
-
-  for (int i = 0; i < VSTProcessor::Bands; ++i) {
-    auto *eq = new Editor::EQUI(m_ID, i + 1);
-    m_Tab->addTab(std::to_string(i + 1), juce::Colour(0.0f, 0.0f, 0.0f, .2f),
-                  eq, true);
-  }
+  m_EQUI.Create(m_ID, -1);
   m_SpectrumBefore.Create(m_ID, &m_Instance->InputFFT);
   m_SpectrumAfter.Create(m_ID, &m_Instance->OutputFFT);
   // get Colors from config
-  m_SpectrumBefore->SetColor(Core::Config::get().theme()->getColor(Theme::Colors::accent).darker(0.7));
-  m_SpectrumAfter->SetColor(Core::Config::get().theme()->getColor(Theme::Colors::accent));
-  
+  m_SpectrumBefore->SetColor(
+      Core::Config::get().theme()->getColor(Theme::Colors::accent).darker(0.7));
+  m_SpectrumAfter->SetColor(
+      Core::Config::get().theme()->getColor(Theme::Colors::accent));
+
   m_FrequencyResponse.Create(m_ID);
 
   m_FrequencyPad.Create(m_ID);
-  m_FrequencyPad->SetTabbedComponents(m_Tab.Get());
+  m_FrequencyPad->SetEQUI(m_EQUI.Get());
 
   m_DecibelMeter.Create(m_ID);
 
@@ -58,8 +51,9 @@ void UI::Init() {
   addAndMakeVisible(*m_DecibelMeter);
   addAndMakeVisible(*m_FrequencyResponse);
   addAndMakeVisible(*m_FrequencyPad);
-  addAndMakeVisible(*m_Tab);
+  addChildComponent(*m_EQUI);
 }
+
 void UI::resized() {
   m_Bypass->setBounds(getWidth() - 70, 0, 70, 40);
   m_AutoGain->setBounds(getWidth() - 140, 0, 70, 40);
@@ -67,18 +61,28 @@ void UI::resized() {
   m_WarmthStrength->setBounds(getWidth() - 210, 20, 70, 20);
   m_DriveMeter->setBounds(getWidth() - 220, 0, 10, 40);
   m_Logo->setBounds(5, 5, 100, 30);
-  int specHeight = getHeight() - (TabHeight + 40);
+  int specHeight = getHeight() - 40;
   juce::Rectangle<int> newBounds{20, 40, getWidth() - 20, specHeight};
   m_SpectrumBefore->setBounds(newBounds);
   m_SpectrumAfter->setBounds(newBounds);
   m_FrequencyResponse->setBounds(newBounds);
   m_FrequencyPad->setBounds(newBounds);
   m_DecibelMeter->setBounds(0, 40, getWidth(), specHeight);
-  m_Tab->setBounds(0, getHeight() - TabHeight, getWidth(), TabHeight);
+
+  {
+    float specWidth = 360;
+    float specX = (getWidth() - specWidth) * 0.5;
+    float specH = specHeight + 20;
+    m_EQUI->setBounds(specX, specH - TabHeight, specWidth, TabHeight);
+  }
 }
 
 void UI::paint(juce::Graphics &g) {
   g.setColour(juce::Colour(0.0f, 0.0f, 0.0f, .2f));
   g.fillRect(0, 0, getWidth(), 40);
+}
+
+void UI::handleAsyncUpdate() {
+  setBounds(0,0,getParentWidth(), getParentHeight());
 }
 } // namespace VSTZ

@@ -106,6 +106,7 @@ void Filter::CalculateCoefficients(double gain, double frequency, double q) {
     m_A1 = -2.0 * tcos / denominator;
     m_A2 = (1.0 - alpha) / denominator;
   } break;
+  case Type::NO:
   default: Reset();
   }
 }

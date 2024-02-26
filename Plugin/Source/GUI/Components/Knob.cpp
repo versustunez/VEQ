@@ -1,8 +1,8 @@
-#include <VUtils/StringUtils.h>
 #include <Core/Config.h>
 #include <Core/Instance.h>
 #include <GUI/Components/Knob.h>
 #include <GUI/LiveLabel.h>
+#include <VUtils/StringUtils.h>
 #include <utility>
 
 namespace VSTZ::GUI {
@@ -27,7 +27,8 @@ Knob::Knob(std::string name, std::string showName, InstanceID id)
     auto state = instance->treeState;
     m_Parameter = state->getParameter(m_name);
     if (m_Parameter != nullptr) {
-      m_attachment = std::make_unique<SliderAttachment>(*state, m_name, *m_slider);
+      m_attachment =
+          std::make_unique<SliderAttachment>(*state, m_name, *m_slider);
     }
   }
   addAndMakeVisible(*m_slider);
@@ -53,13 +54,12 @@ void Knob::editorShown(juce::Label *, juce::TextEditor &editor) {
 }
 void Knob::editorHidden(juce::Label *label, juce::TextEditor &) {
   auto text = label->getText().toStdString();
-  double newValue = VUtils::StringUtils::toNumber(text, m_slider->getValue());
+  double newValue =
+      VUtils::StringUtils::toNumberSuffix(text, m_slider->getValue());
   m_slider->setValue(newValue);
   setText(m_showName);
 }
-Knob::~Knob() {
-  m_label->removeListener(this);
-}
+Knob::~Knob() { m_label->removeListener(this); }
 void Knob::enableLiveLabel(bool isSemi) {
   m_liveLabel.Create(this, isSemi, showName());
   m_slider->setPopupDisplayEnabled(false, false, getParentComponent(), 0);

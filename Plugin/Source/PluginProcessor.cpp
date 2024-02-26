@@ -5,6 +5,7 @@
 #include "PluginEditor.h"
 
 #include <FMT.h>
+#include <algorithm>
 
 VSTProcessor::VSTProcessor()
     : AudioProcessor(
@@ -73,7 +74,7 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
   auto *writeLeft = buffer.getWritePointer(0);
   auto *writeRight = buffer.getWritePointer(1);
   bool warmth = parameters.Warmth->getBool();
-  //processor.m_AnalogMode.ResetSlew(dataLeft[0], dataRight[0]);
+  // processor.m_AnalogMode.ResetSlew(dataLeft[0], dataRight[0]);
   if (warmth) {
     processor.m_AnalogMode.DriveTarget.CalculateDrive(
         dataLeft, dataRight, static_cast<size_t>(buffer.getNumSamples()));
@@ -103,8 +104,7 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
     rOut /= static_cast<float>(active);
 
     if (warmth) {
-      const auto processed =
-          processor.m_AnalogMode.ApplyPost(lOut, rOut);
+      const auto processed = processor.m_AnalogMode.ApplyPost(lOut, rOut);
       lOut = processed.Left;
       rOut = processed.Right;
     }
@@ -160,7 +160,7 @@ VSTProcessor::~VSTProcessor() {
 void VSTProcessor::prepareToPlay(double sampleRate, int) {
   auto &config = VSTZ::Core::Config::get();
   // IT'S OKAY BECAUSE THEY ARE LIKELY TO NOT CHANGE OR BE INTEGERS AT ALL.
-  if (config.sampleRate != sampleRate) {
+  if ((int)config.sampleRate != (int)sampleRate) {
     config.sampleRate = sampleRate;
   }
   for (auto &band : FilterBands) {
@@ -190,15 +190,16 @@ void VSTProcessor::CalculateAutoGain() {
     m_AutoGainValue = 1.0;
     return;
   }
-  float dB = 0;
-  float active = 1;
+  double dB = 0;
+  int active = 1;
   for (auto &FilterBand : FilterBands) {
-    dB += FilterBand.ApplyingFilter.IsBypassed() ? 0
-                                                 : -FilterBand.Gain->getValue();
-    active++;
+    if (!FilterBand.ApplyingFilter.IsBypassed()) {
+      dB = std::max(dB, FilterBand.Gain->getValue());
+      active++;
+    }
   }
   dB /= active;
-  m_AutoGainValue = std::pow(10.0f, dB / 20.0f);
+  m_AutoGainValue = std::pow(10.0f, (float)-dB / 20.0f);
 }
 
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {

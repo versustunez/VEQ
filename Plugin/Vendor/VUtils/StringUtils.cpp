@@ -136,6 +136,20 @@ long StringUtils::toNumber(std::string &string, long def) {
   return val;
 }
 
+double StringUtils::toNumberSuffix(const std::string &input, double def) {
+  char *endPtr;
+  double number = std::strtod(input.c_str(), &endPtr);
+  if (endPtr == input.c_str())
+    return def;
+
+  if (*endPtr == 'k' || *endPtr == 'K')
+    number *= 1000;
+  if (*endPtr == 'm' || *endPtr == 'M')
+    number *= 1000000;
+
+  return static_cast<double>(number);
+}
+
 double StringUtils::toNumber(std::string &string, double def) {
   char *pEnd;
   double val = std::strtod(string.c_str(), &pEnd);
@@ -143,6 +157,7 @@ double StringUtils::toNumber(std::string &string, double def) {
     return def;
   return val;
 }
+
 std::string StringUtils::toString(double value, int precision, bool fixed) {
   std::stringstream str{};
   if (fixed) {

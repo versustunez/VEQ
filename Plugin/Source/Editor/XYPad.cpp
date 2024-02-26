@@ -58,7 +58,7 @@ void XYPad::paint(juce::Graphics &g) {
       g.fillEllipse(
           juce::Rectangle(point.X - 5.0f, point.Y - 5.0f, 10.0f, 10.0f));
 
-      if (point.Index == m_TabbedComponent->getCurrentTabIndex()) {
+      if (point.Index == m_Equi->CurrentIndex()) {
         g.drawEllipse(
             juce::Rectangle(point.X - 7.0f, point.Y - 7.0f, 14.0f, 14.0f),
             1.0f);
@@ -79,14 +79,24 @@ void XYPad::resized() {
 void XYPad::mouseDown(const juce::MouseEvent &e) {
   float x = e.position.x;
   float y = e.position.y;
+  EQPoint *selectedPoint = nullptr;
+
   for (auto &point : m_Points) {
     if (point.X - 5.0f <= x && x <= point.X + 5.0f && point.Y - 5.0f <= y &&
         y <= point.Y + 5.0f && point.Active) {
       m_CurrentPoint = &point;
-      m_TabbedComponent->setCurrentTabIndex(static_cast<int>(point.Index));
+      m_Equi->SwitchTo(static_cast<int>(point.Index));
+      selectedPoint = &point;
+      repaint();
       break;
     }
   }
+
+  if (!selectedPoint && e.getNumberOfClicks() == 1) {
+    m_Equi->SwitchTo(-1);
+    repaint();
+  }
+
   if (e.getNumberOfClicks() == 2 && m_CurrentPoint) {
     m_CurrentPoint->Parameters.Gain->ResetToDefault();
     m_CurrentPoint->Parameters.Q->ResetToDefault();
@@ -94,7 +104,7 @@ void XYPad::mouseDown(const juce::MouseEvent &e) {
     for (auto &point : m_Points) {
       if (!point.Active) {
         m_CurrentPoint = &point;
-        m_TabbedComponent->setCurrentTabIndex(static_cast<int>(point.Index));
+        m_Equi->SwitchTo(static_cast<int>(point.Index));
         if (const float widthPercent = static_cast<float>(getWidth()) / 100.0f;
             x < widthPercent * 4) {
           point.Parameters.Type->SetValueAndNotifyHost(1);
@@ -169,7 +179,7 @@ void XYPad::mouseWheelMove(const juce::MouseEvent &,
 void XYPad::InternalUpdate(const size_t index) {
   if (const float scale = GetScale(); scale != m_Scale) {
     if (m_CurrentPoint) {
-      if (auto *mouseMain = juce::Desktop::getInstance().getMouseSource(0)) {
+      if (auto *mouseMain = juce::Desktop::getInstance().getDraggingMouseSource(0)) {
         const auto pos = mouseMain->getScreenPosition();
         const auto gain =
             static_cast<float>(m_Points[index].Parameters.Gain->getValue());

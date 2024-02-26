@@ -7,19 +7,21 @@
 
 namespace VSTZ::Editor {
 
-constexpr static int TabHeight = 120;
+constexpr static int TabHeight = 60;
 
-class EQUI : public GUI::VComponent, Events::Handler {
+class EQUI : public GUI::VComponent {
 public:
-  explicit EQUI(InstanceID id, int index = 1) : m_ID(id), m_Index(index) {
-    Init();
-  }
+  explicit EQUI(InstanceID id, int index = 1) : m_ID(id), m_Index(index) {}
   ~EQUI() override;
   void Init();
+  void SwitchTo(int index);
+  void Hide();
   void resized() override;
+  void paint(juce::Graphics &graphics) override;
+  int CurrentIndex() const { return m_Index; }
 
 private:
-  void Handle(Events::Event *event) override;
+  void Uninit();
 
 protected:
   InstanceID m_ID{};

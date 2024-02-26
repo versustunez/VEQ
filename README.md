@@ -1,8 +1,12 @@
-<img alt="logo" style="display: block; width: 300px; padding: 20px; margin: auto;" src="./Assets/logo.svg"></img>
+<p align="center">
+<img alt="logo" style="display: block; width: 300px;" src="./Assets/logo.svg"></img>
+</p>
 
 [![Build](https://github.com/versustunez/VEQ/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/versustunez/VEQ/actions/workflows/release.yml)
 
-<img src="./Assets/screenshot.jpg" alt="screenshot" style="display: block; margin: auto;"></img>
+<p align="center">
+<img src="./Assets/screenshot.png" width="1060" alt="screenshot">
+</p>
 
 The ***Eight-Band Parallel Equalizer*** feature takes an innovative approach to sound modification, where each band
 processes the audio concurrently rather than in a sequential chain, offering a richer and more intricate adjustment.
@@ -24,6 +28,8 @@ excessive loudness variations and ensure a balanced output.
   adjust the overall volume after equalizing.
 * ***Custom-Made Filter:*** Our specially crafted filter offers precision controls for enhancing the audio quality,
   providing a distinct and improved sound.
+* ***Analog:*** Analog adds Harmonic Distortion into the <= 500Hz which gives a warming Character. at the same time it
+  adds a slight High-shelf on the High frequencies to reduce the highs.
 
 ## Why This Plugin
 
@@ -48,10 +54,12 @@ experiences as well.
 ## Build
 
 For building you need:
+
 - CMake `3.16 or Newer`
 - Compiler (MSVC, GCC, Clang) That supports C++20
 
 ### Generic
+
 ```
 mkdir build
 cd build
@@ -59,4 +67,5 @@ cmake .. -DCMAKE_BUILD_TYPE={Release|Debug}
 cmake --build . --config {Release|Debug}
 ```
 
+> [!NOTE]
 > The config does not have an effect on Linux Systems, on the other hand the CMAKE_BUILD_TYPE has no effect on Windows.

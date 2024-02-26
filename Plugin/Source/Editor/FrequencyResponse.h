@@ -15,9 +15,14 @@ private:
   void PrepareResponse();
   void Handle(Events::Event *event) override;
 
+  void CreateResponseArray();
+
 protected:
   InstanceID m_ID{};
   std::array<juce::Path, VSTProcessor::Bands> m_ResponsePaths{};
   juce::Path m_FullResponse;
+
+  std::vector<std::array<double, 8>> m_Mags;
+  std::vector<double> m_MagsFullResponse;
 };
 } // namespace VSTZ::Editor

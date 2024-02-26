@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Editor/EQUI.h"
 #include "GUI/Components/VComponent.h"
 #include "PluginProcessor.h"
 #include "TypeDefs.h"
@@ -36,8 +37,8 @@ public:
   XYPad(InstanceID id);
   ~XYPad();
 
-  void SetTabbedComponents(juce::TabbedComponent *tabbedComponent) {
-    m_TabbedComponent = tabbedComponent;
+  void SetEQUI(EQUI *equi) {
+    m_Equi = equi;
   }
 
   void paint(juce::Graphics &g) override;
@@ -55,15 +56,15 @@ public:
 
 protected:
   float GetScale() const;
+
 protected:
   float m_Scale{0.0f};
   EQPoint *m_CurrentPoint{nullptr};
   bool m_MouseUpdated{false};
 
   InstanceID m_ID{0};
-  juce::TabbedComponent *m_TabbedComponent{nullptr};
+  EQUI *m_Equi{nullptr};
   std::array<EQPoint, VSTProcessor::Bands> m_Points{};
   std::array<XYPadPointListener, VSTProcessor::Bands> m_PointListener{};
-
 };
 } // namespace VSTZ::Editor

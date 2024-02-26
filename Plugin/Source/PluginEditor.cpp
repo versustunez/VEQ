@@ -13,7 +13,8 @@ VSTEditor::VSTEditor(VSTProcessor &p, std::string id)
       m_instanceId(p.instance->id) {
   auto &config = VSTZ::Core::Config::get();
   config.registerEditor(m_id, this);
-  setResizable(false, false);
+  setResizable(true, true);
+  setResizeLimits(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH*10, WINDOW_HEIGHT*10);
   setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
   if (config.properties()->asBool("useOpenGL", true))
     setupGL(config.properties()->asBool("vsync", true));
@@ -32,7 +33,10 @@ VSTEditor::~VSTEditor() {
   m_openGLContext.detach();
   VSTZ::Core::Instance::get(m_instanceId)->Editor = nullptr;
 }
-void VSTEditor::resized() {}
+void VSTEditor::resized() {
+  if (m_UI)
+    m_UI->triggerResize();
+}
 void VSTEditor::setupGL(bool vsync) {
 #ifdef _DEBUG
   return;
@@ -42,7 +46,7 @@ void VSTEditor::setupGL(bool vsync) {
   m_openGLContext.setContinuousRepainting(false);
   m_openGLContext.setComponentPaintingEnabled(true);
 
-  m_openGLContext.attachTo(*this);
+  m_openGLContext.attachTo(*getTopLevelComponent());
   m_openGLContext.makeActive();
 }
 void VSTEditor::newOpenGLContextCreated() {}

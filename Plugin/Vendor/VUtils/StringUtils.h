@@ -9,6 +9,7 @@ class StringUtils {
 public:
   static int toNumber(std::string &string, int def);
   static long toNumber(std::string &string, long def);
+  static double toNumberSuffix(const std::string &, double def);
   static double toNumber(std::string &string, double def);
   static void leftTrim(std::string &s);
 

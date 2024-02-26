@@ -5,27 +5,23 @@
 #include <FMT.h>
 
 namespace VSTZ::Editor {
-EQUI::~EQUI() {
-  Core::Instance::get(m_ID)->EventHandler.RemoveHandler(
-      fmt::format("Band{}_type", m_Index), this);
-}
+EQUI::~EQUI() { Uninit(); }
 
 void EQUI::Init() {
-  auto instance = Core::Instance::get(m_ID);
   {
-    auto name = fmt::format("Band{}_type", m_Index);
+    auto name = fmt::format("Band{}_type", m_Index + 1);
     m_Type.Create(name, "Type", m_ID);
   }
   {
-    auto name = fmt::format("Band{}_freq", m_Index);
+    auto name = fmt::format("Band{}_freq", m_Index + 1);
     m_Frequency.Create(name, "Frequency", m_ID);
   }
   {
-    auto name = fmt::format("Band{}_gain", m_Index);
+    auto name = fmt::format("Band{}_gain", m_Index + 1);
     m_Gain.Create(name, "Gain", m_ID);
   }
   {
-    auto name = fmt::format("Band{}_q", m_Index);
+    auto name = fmt::format("Band{}_q", m_Index + 1);
     m_Q.Create(name, "Q", m_ID);
   }
   auto buttons = {m_Type.Get(), m_Frequency.Get(), m_Gain.Get(), m_Q.Get()};
@@ -33,16 +29,12 @@ void EQUI::Init() {
     b->enableLiveLabel(true);
     addAndMakeVisible(b);
   }
-  int val = (int)m_Type->getValue();
-
-  m_Q->setVisible(val != 0);
-  m_Frequency->setVisible(val != 0);
-  m_Gain->setVisible(val != 0);
-
-  instance->EventHandler.AddHandler(fmt::format("Band{}_type", m_Index), this);
+  resized();
 }
 
 void EQUI::resized() {
+  if (!m_Type)
+    return;
   juce::FlexBox fb;
   fb.flexWrap = juce::FlexBox::Wrap::noWrap;
   fb.justifyContent = juce::FlexBox::JustifyContent::center;
@@ -52,26 +44,49 @@ void EQUI::resized() {
     if (!b->isVisible())
       continue;
     fb.items.add(juce::FlexItem(*b)
-                     .withMinWidth(100.0f)
-                     .withHeight(TabHeight - 40)
+                     .withMinWidth(80.0f)
+                     .withHeight(TabHeight)
                      .withMargin(juce::FlexItem::Margin(5.0f)));
   }
 
   fb.performLayout(getLocalBounds());
 }
 
-void EQUI::Handle(Events::Event *event) {
-  auto *pc = event->As<Events::ParameterChange>();
-  if (!pc)
+void EQUI::paint(juce::Graphics &graphics) {
+  graphics.setColour(juce::Colour::fromRGBA(21, 21, 26, 240));
+  graphics.fillRoundedRectangle(0, 0, getWidth(), getHeight(), 20.0f);
+}
+
+void EQUI::Hide() { setVisible(false); }
+
+void EQUI::SwitchTo(int index) {
+  if (index == -1) {
+    m_Index = index;
+    Hide();
+    return;
+  }
+  setVisible(true);
+  if (m_Index == index)
+    return;
+  m_Index = index;
+  Uninit();
+  Init();
+}
+
+void EQUI::Uninit() {
+  // We are already Not Init...
+  if (m_Type == nullptr)
     return;
 
-  int val = (int)pc->Parameter->getValue();
+  removeChildComponent(m_Type.Get());
+  removeChildComponent(m_Frequency.Get());
+  removeChildComponent(m_Gain.Get());
+  removeChildComponent(m_Q.Get());
 
-  m_Q->setVisible(val != 0);
-  m_Frequency->setVisible(val != 0);
-  m_Gain->setVisible(val != 0);
-
-  resized();
-  repaint();
+  // Reset ;)
+  m_Type = nullptr;
+  m_Frequency = nullptr;
+  m_Gain = nullptr;
+  m_Q = nullptr;
 }
 } // namespace VSTZ::Editor

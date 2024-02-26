@@ -14,12 +14,16 @@
 
 namespace VSTZ {
 
-class UI : public GUI::VComponent {
+class UI : public GUI::VComponent, juce::AsyncUpdater {
 public:
   explicit UI(InstanceID id) : m_ID(id) { Init(); }
   void Init();
   void resized() override;
   void paint(juce::Graphics &g) override;
+
+  void handleAsyncUpdate() override;
+
+  void triggerResize() { triggerAsyncUpdate(); }
 
 protected:
   InstanceID m_ID{};
@@ -32,7 +36,7 @@ protected:
   Scope<Editor::Spectrum> m_SpectrumAfter;
   Scope<Editor::FrequencyResponse> m_FrequencyResponse;
   Scope<Editor::XYPad> m_FrequencyPad;
-  Scope<juce::TabbedComponent> m_Tab;
+  Scope<Editor::EQUI> m_EQUI;
   Scope<Editor::DecibelMeter> m_DecibelMeter;
   Scope<Editor::DriveMeter> m_DriveMeter;
 
