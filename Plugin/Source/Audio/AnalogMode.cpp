@@ -37,24 +37,17 @@ static double ApplyAnalogDistortion(const double in, const double driveAmount,
   return input * sign * driveAmountReduction;
 }
 
-static double ApplyFirstOrderLowPass(const double in, double &lastValue,
-                                     const double alpha) {
-  lastValue = alpha * lastValue + (1.0 - alpha) * in;
-  return lastValue;
-}
-
 AnalogChannel AnalogMode::ApplyPreDistortion(const double inLeft,
-                                             const double inRight) {
-
+                                             const double inRight,
+                                             size_t index) {
+  DriveTarget.Update();
+  const double drive = DriveTarget.GetDrive();
+  const double reduction = DriveTarget.GetDriveReduction();
   return {lerp(inLeft,
-               ApplyAnalogDistortion(m_AnalogFilter.ApplyLeft(inLeft),
-                                     DriveTarget.GetDrive(),
-                                     DriveTarget.GetDriveReduction()),
+               ApplyAnalogDistortion(m_BufferLeft[index], drive, reduction),
                m_DistortionAmount),
           lerp(inRight,
-               ApplyAnalogDistortion(m_AnalogFilter.ApplyRight(inRight),
-                                     DriveTarget.GetDrive(),
-                                     DriveTarget.GetDriveReduction()),
+               ApplyAnalogDistortion(m_BufferRight[index], drive, reduction),
                m_DistortionAmount)};
 }
 
@@ -64,12 +57,16 @@ AnalogChannel AnalogMode::ApplyPost(const double inL, const double inR) {
       m_SmoothFilter.ApplyRight(inR),
   };
 }
+void AnalogMode::Resize(const size_t maxSize) {
+  m_BufferLeft.resize(maxSize);
+  m_BufferRight.resize(maxSize);
+}
 
 void AnalogMode::SetupFilter(const double sR) {
   m_AnalogFilter.SetSampleRate(sR);
   m_AnalogFilter.SetFilterType(Filter::Type::LowPass);
   // the AnalogFilter needs to cut to avoid Aliasing ;)
-  m_AnalogFilter.CalculateCoefficients(48.0, 500, 0.707);
+  m_AnalogFilter.CalculateCoefficients(48.0, 300, 0.707);
 
   m_SmoothFilter.SetSampleRate(sR);
   m_SmoothFilter.SetFilterType(Filter::Type::HighShelf);
@@ -79,7 +76,23 @@ void AnalogMode::SetupFilter(const double sR) {
 void AnalogMode::CalculateWarmEffect(const float value) {
   m_Gain = lerp(-0.05, -1.5, value);
   m_SmoothFilter.CalculateCoefficients(m_Gain, 18000, 0.45);
-  m_DistortionAmount = lerp(0.01, 0.12f, value);
+  m_DistortionAmount = lerp(0.01, 0.2f, value);
+}
+void AnalogMode::PreProcess(const std::vector<Channel> &buffer, size_t size) {
+  m_CurrentProvidedSamples = size;
+  for (int i = 0; i < m_CurrentProvidedSamples; ++i) {
+    auto &buf = buffer[i];
+    m_BufferLeft[i] = m_AnalogFilter.ApplyLeft(buf.Left);
+    m_BufferRight[i] = m_AnalogFilter.ApplyRight(buf.Right);
+  }
+  DriveTarget.CalculateDrive(m_BufferLeft.data(), m_BufferRight.data(),
+                             m_CurrentProvidedSamples);
+  for (int i = 0; i < m_CurrentProvidedSamples; ++i) {
+    auto &buf = buffer[i];
+    auto [Left, Right] = ApplyPreDistortion(buf.Left, buf.Right, i);
+    m_BufferLeft[i] = Left;
+    m_BufferRight[i] = Right;
+  }
 }
 
 } // namespace VSTZ

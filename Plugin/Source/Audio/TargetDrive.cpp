@@ -13,7 +13,8 @@ void TargetDrive::CalculateDrive(const float *leftBuffer,
     const float val = std::abs((leftBuffer[i] + rightBuffer[i]) * 0.5f);
     avg += val;
   }
-  m_SmoothedGain = m_Alpha * (avg / size) + (1 - m_Alpha) * m_SmoothedGain;
+  m_SmoothedGain = m_SmoothingConstant * (avg / size) +
+                   (1 - m_SmoothingConstant) * m_SmoothedGain;
   ApplyDrive();
 }
 
@@ -24,16 +25,24 @@ void TargetDrive::CalculateDrive(const double *leftBuffer,
     const double val = std::abs((leftBuffer[i] + rightBuffer[i]) * 0.5);
     avg += val;
   }
-  m_SmoothedGain = m_Alpha * (avg / size) + (1 - m_Alpha) * m_SmoothedGain;
+  m_SmoothedGain = m_SmoothingConstant * (avg / size) +
+                   (1 - m_SmoothingConstant) * m_SmoothedGain;
   ApplyDrive();
 }
 
-void TargetDrive::ApplyDrive() {
+void TargetDrive::Update() {
+  m_CurrentTarget.Gain = m_GainSmoothingConstant * m_TargetedTarget.Gain +
+                         (1 - m_GainSmoothingConstant) * m_CurrentTarget.Gain;
+  m_CurrentTarget.Reduction =
+      m_GainSmoothingConstant * m_TargetedTarget.Reduction +
+      (1 - m_GainSmoothingConstant) * m_CurrentTarget.Reduction;
+}
 
+void TargetDrive::ApplyDrive() {
   const double dB = AudioUtils::GainToDecibels(m_SmoothedGain);
-  const double gain = std::clamp(0.0 - dB, -MaxDrive, MaxDrive);
-  m_CurrentGain = gain;
-  m_DriveGain = AudioUtils::DecibelToGain(gain);
-  m_DriveGainReduction = AudioUtils::DecibelToGain(-gain);
+  const double gain = std::clamp(3.0 - dB, -MaxDrive, MaxDrive);
+  m_CurrentDriveDecibels = gain;
+  m_TargetedTarget.Gain = AudioUtils::DecibelToGain(gain);
+  m_TargetedTarget.Reduction = AudioUtils::DecibelToGain(-(gain - 3));
 }
 } // namespace VSTZ

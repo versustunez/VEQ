@@ -6,7 +6,7 @@
 #include "ParameterStruct.h"
 
 #include <Audio/AnalogMode.h>
-#include <Core/Parameter/Parameter.h>
+#include <Audio/Structs.h>
 
 namespace VSTZ::Core {
 class Instance;
@@ -60,6 +60,10 @@ public:
   constexpr static int Bands{8};
   VSTZ::Band FilterBands[Bands]{};
   VSTZ::Scope<VSTZ::BandListener> BandListener[Bands]{};
+
+
+  std::vector<VSTZ::Channel> Buffer;
+  size_t m_CurrentSamples{0};
 
 private:
   std::string m_Id;

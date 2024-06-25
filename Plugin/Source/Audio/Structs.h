@@ -41,4 +41,10 @@ struct Channel {
     return {Left * other.Left, Right * other.Right};
   }
 };
-}; // namespace VSTZ
+
+struct InOut {
+  double InL{0}, OutL{0};
+  double InR{0}, OutR{0};
+};
+
+} // namespace VSTZ
