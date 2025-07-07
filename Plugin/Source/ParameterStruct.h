@@ -9,6 +9,7 @@ struct Parameters {
   Core::Parameter *AutoGain{nullptr};
   Core::Parameter *Warmth{nullptr};
   Core::Parameter *WarmthEffect{nullptr};
+  Core::Parameter *WarmthVoltage{nullptr};
 };
 struct Band {
   Core::Parameter *Frequency{};

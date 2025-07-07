@@ -31,6 +31,7 @@ protected:
   Scope<GUI::Switch> m_AutoGain;
   Scope<GUI::Switch> m_Warmth;
   Scope<GUI::BoxSlider> m_WarmthStrength;
+  Scope<GUI::BoxSlider> m_Voltage;
   Scope<Editor::Logo> m_Logo;
   Scope<Editor::Spectrum> m_SpectrumBefore;
   Scope<Editor::Spectrum> m_SpectrumAfter;

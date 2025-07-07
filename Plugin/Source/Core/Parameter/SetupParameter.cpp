@@ -13,7 +13,10 @@ void ParameterHandler::SetupParameter() {
     return juce::String(value, 2) + " dB";
   };
   constexpr auto percentCB = [](const float value, float) -> juce::String {
-    return juce::String(value * 100, 2) + "%";
+    return juce::String(value * 100, 1) + "%";
+  };
+  constexpr auto voltageCB = [](const float value, float) -> juce::String {
+    return juce::String(value, 1) + "V";
   };
   constexpr auto typeCB = [](const float value, float) -> juce::String {
     switch (static_cast<int>(value)) {
@@ -64,5 +67,11 @@ void ParameterHandler::SetupParameter() {
                 .Max = 1.0,
                 .Value = 0.25,
                 .ValueToStringCallback = percentCB});
+  AddParameter({.Name = "analog_voltage",
+                .View = "Voltage",
+                .Min = 100,
+                .Max = 300,
+                .Value = 160,
+                .ValueToStringCallback = voltageCB});
 }
 } // namespace VSTZ::Core

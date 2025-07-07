@@ -24,9 +24,14 @@ VSTProcessor::VSTProcessor()
   m_Parameters.Warmth = instance->handler->GetParameter("analog");
   m_Parameters.WarmthEffect =
       instance->handler->GetParameter("analog_strength");
+  m_Parameters.WarmthVoltage =
+    instance->handler->GetParameter("analog_voltage");
 
   m_Parameters.WarmthEffect->RegisterChangeFunction(
       [this](const float value) { m_AnalogMode.CalculateWarmEffect(value); });
+
+  m_Parameters.WarmthVoltage->RegisterChangeFunction(
+      [this](const float value) { m_AnalogMode.SetVoltage(value); });
 
   m_Parameters.AutoGain->RegisterChangeFunction(
       [&](double) { CalculateAutoGain(); });
@@ -186,19 +191,20 @@ static void ProcessWarmth(VSTProcessor &processor, T *leftBuffer,
       continue;
     active++;
     for (int i = 0; i < processor.m_CurrentSamples; ++i) {
-      leftBuffer[i] +=
-          static_cast<float>(filter.ApplyLeft(analog.m_BufferLeft[i]));
+      T original = analog.m_BufferLeft[i];
+      T element = filter.ApplyLeft(original);
+      leftBuffer[i] += element;
+    }
+    for (int i = 0; i < processor.m_CurrentSamples; ++i) {
       rightBuffer[i] +=
-          static_cast<float>(filter.ApplyRight(analog.m_BufferRight[i]));
+      static_cast<T>(filter.ApplyRight(analog.m_BufferRight[i]));
     }
   }
 
   const double gainReduction = (1.0 / active) * processor.m_AutoGainValue;
   for (int i = 0; i < processor.m_CurrentSamples; ++i) {
-    auto val = analog.ApplyPost(leftBuffer[i] * gainReduction,
-                                rightBuffer[i] * gainReduction);
-    leftBuffer[i] = val.Left;
-    rightBuffer[i] = val.Right;
+    leftBuffer[i] = leftBuffer[i] * gainReduction;
+    rightBuffer[i] = rightBuffer[i] * gainReduction;
     processor.instance->OutputFFT.PushSample((leftBuffer[i] + rightBuffer[i]) *
                                              0.5f);
   }
@@ -212,11 +218,10 @@ static void ProcessNormal(VSTProcessor &processor, T *leftBuffer,
     if (filter.IsBypassed())
       continue;
     active++;
-    for (int i = 0; i < processor.m_CurrentSamples; ++i) {
-      auto &el = processor.Buffer[i];
-      leftBuffer[i] += filter.ApplyLeft(el.Left);
-      rightBuffer[i] += filter.ApplyRight(el.Right);
-    }
+    for (int i = 0; i < processor.m_CurrentSamples; ++i)
+      leftBuffer[i] += filter.ApplyLeft(processor.Buffer[i].Left);
+    for (int i = 0; i < processor.m_CurrentSamples; ++i)
+      rightBuffer[i] += filter.ApplyRight(processor.Buffer[i].Right);
   }
 
   const double gainReduction = (1.0 / active) * processor.m_AutoGainValue;

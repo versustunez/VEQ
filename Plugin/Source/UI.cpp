@@ -20,6 +20,7 @@ void UI::Init() {
   m_Warmth->setButtonText("Analog");
 
   m_WarmthStrength.Create("analog_strength", "Strength", m_ID);
+  m_Voltage.Create("analog_voltage", "Voltage", m_ID);
 
   m_DriveMeter.Create(&m_Instance->Processor->m_AnalogMode.DriveTarget);
 
@@ -45,6 +46,7 @@ void UI::Init() {
   addAndMakeVisible(*m_AutoGain);
   addAndMakeVisible(*m_Warmth);
   addAndMakeVisible(*m_WarmthStrength);
+  addAndMakeVisible(*m_Voltage);
   addAndMakeVisible(*m_DriveMeter);
   addAndMakeVisible(*m_SpectrumBefore);
   addAndMakeVisible(*m_SpectrumAfter);
@@ -57,9 +59,10 @@ void UI::Init() {
 void UI::resized() {
   m_Bypass->setBounds(getWidth() - 70, 0, 70, 40);
   m_AutoGain->setBounds(getWidth() - 140, 0, 70, 40);
-  m_Warmth->setBounds(getWidth() - 210, 0, 70, 20);
-  m_WarmthStrength->setBounds(getWidth() - 210, 20, 70, 20);
-  m_DriveMeter->setBounds(getWidth() - 220, 0, 10, 40);
+  m_Warmth->setBounds(getWidth() - 240, 0, 90, 20);
+  m_WarmthStrength->setBounds(getWidth() - 240, 20, 50, 20);
+  m_Voltage->setBounds(getWidth() - 190, 20, 40, 20);
+  m_DriveMeter->setBounds(getWidth() - 150, 0, 10, 40);
   m_Logo->setBounds(5, 5, 100, 30);
   int specHeight = getHeight() - 40;
   juce::Rectangle<int> newBounds{20, 40, getWidth() - 20, specHeight};
@@ -80,6 +83,12 @@ void UI::resized() {
 void UI::paint(juce::Graphics &g) {
   g.setColour(juce::Colour(0.0f, 0.0f, 0.0f, .2f));
   g.fillRect(0, 0, getWidth(), 40);
+
+  if (m_Instance->state.TrackColor) {
+    auto color = *m_Instance->state.TrackColor;
+    m_SpectrumBefore->SetColor(color.darker(0.7));
+    m_SpectrumAfter->SetColor(color);
+  }
 }
 
 void UI::handleAsyncUpdate() {
