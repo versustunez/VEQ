@@ -6,13 +6,13 @@ macro(update_from_git name repo branch)
             GIT_REPOSITORY ${repo}
             GIT_SHALLOW TRUE
             GIT_PROGRESS TRUE
-            GIT_TAG "origin/${branch}")
+            GIT_TAG ${branch})
 
     FetchContent_GetProperties(${name})
 
     if (NOT ${name}_POPULATED)
         message("Updating ${name} from git...")
-        FetchContent_Populate(${name})
+        FetchContent_MakeAvailable(${name})
         message("${name} update finished")
     endif ()
 endmacro()

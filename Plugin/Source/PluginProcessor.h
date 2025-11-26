@@ -1,12 +1,12 @@
 #pragma once
 
+#include "Audio/Oversampler.h"
 #include "BandListener.h"
 #include "Events/EventHandler.h"
 #include "JuceHeader.h"
 #include "ParameterStruct.h"
 
 #include <Audio/AnalogMode.h>
-#include <Audio/Structs.h>
 
 namespace VSTZ::Core {
 class Instance;
@@ -47,26 +47,20 @@ public:
   void getStateInformation(juce::MemoryBlock &destData) override;
   void setStateInformation(const void *data, int sizeInBytes) override;
 
-  void CalculateAutoGain();
-
   VSTZ::Parameters &GetParameters() { return m_Parameters; }
-
-  float m_AutoGainValue{1};
-  float m_LastValueLeft{0};
-  float m_LastValueRight{0};
 
   VSTZ::AnalogMode m_AnalogMode;
   VSTZ::Core::Instance *instance = nullptr;
   constexpr static int Bands{8};
   VSTZ::Band FilterBands[Bands]{};
+  VSTZ::Oversampler Oversampler{};
   VSTZ::Scope<VSTZ::BandListener> BandListener[Bands]{};
-
-
-  std::vector<VSTZ::Channel> Buffer;
+  VSTZ::Smoother m_driveSmoother;
   size_t m_CurrentSamples{0};
 
 private:
   std::string m_Id;
+  int32_t m_AnalogModeId = 0;
   juce::AudioProcessorValueTreeState m_TreeState;
   VSTZ::Parameters m_Parameters{};
 };

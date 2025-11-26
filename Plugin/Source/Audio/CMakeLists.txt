@@ -1,5 +1,7 @@
 add_sources(
         AnalogMode.cpp
+        AutoGain.cpp
         FFT.cpp
-        TargetDrive.cpp
+        Oversampler.cpp
+        Structs.cpp
 )

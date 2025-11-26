@@ -26,4 +26,10 @@ void BandListener::Handle(Events::Event *event) {
                                                m_Band->Frequency->getValue(),
                                                m_Band->Q->getValue());
 }
+
+void BandListener::update() const {
+  m_Band->ApplyingFilter.CalculateCoefficients(m_Band->Gain->getValue(),
+                                               m_Band->Frequency->getValue(),
+                                               m_Band->Q->getValue());
+}
 } // namespace VSTZ

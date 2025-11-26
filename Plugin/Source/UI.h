@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core/Instance.h"
-#include "Editor/DriveMeter.h"
 #include "Editor/FrequencyResponse.h"
 #include "Editor/Logo.h"
 #include "Editor/Spectrum.h"
@@ -28,10 +27,10 @@ public:
 protected:
   InstanceID m_ID{};
   Scope<GUI::Switch> m_Bypass;
-  Scope<GUI::Switch> m_AutoGain;
-  Scope<GUI::Switch> m_Warmth;
+  Scope<GUI::Switch> m_MidSide;
   Scope<GUI::BoxSlider> m_WarmthStrength;
   Scope<GUI::BoxSlider> m_Voltage;
+  Scope<GUI::BoxSlider> m_Drive;
   Scope<Editor::Logo> m_Logo;
   Scope<Editor::Spectrum> m_SpectrumBefore;
   Scope<Editor::Spectrum> m_SpectrumAfter;
@@ -39,7 +38,6 @@ protected:
   Scope<Editor::XYPad> m_FrequencyPad;
   Scope<Editor::EQUI> m_EQUI;
   Scope<Editor::DecibelMeter> m_DecibelMeter;
-  Scope<Editor::DriveMeter> m_DriveMeter;
 
   Core::Instance *m_Instance;
 };

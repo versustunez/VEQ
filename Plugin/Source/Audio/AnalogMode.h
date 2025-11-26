@@ -1,36 +1,33 @@
 #pragma once
-#include "../Filter.h"
+#include "AutoGain.h"
 #include "JuceHeader.h"
 #include "Structs.h"
-#include "TargetDrive.h"
 
 #include <vector>
 
 namespace VSTZ {
-struct AnalogChannel {
-  double Left, Right;
-};
-struct AnalogMode {
-  AnalogChannel Apply(double inLeft, double inRight, size_t index);
 
-  void Resize(size_t maxSize);
-  void SetupFilter(double sR);
+struct AnalogMode {
+  Channel Apply(double inLeft, double inRight, double drive);
   void CalculateWarmEffect(float value);
   void SetVoltage(float value);
 
-  void PreProcess(const std::vector<Channel>&buffer, size_t size);
+  void PreProcess(const std::vector<Channel> &buffer, size_t size);
+  void PostProcess(std::vector<Channel> &buffer, size_t size);
+  double Tube(double in, size_t index, double drive);
 
-  TargetDrive DriveTarget;
+  void SetSampleRate(double sampleRate);
+  void SetBufferSize(size_t size);
 
-  Filter m_AnalogFilter{};
+private:
   double m_DistortionAmount{0.0f};
-  double m_Gain{-1.0f};
-  double m_Voltage{160.0f}; // Harsher
-
-  std::vector<double> m_BufferLeft;
-  std::vector<double> m_BufferRight;
+  double m_Voltage{160.0f};
   size_t m_CurrentProvidedSamples{0};
 
-  double Tube(double in, double drive, double reduction) const;
+  DCFilter m_TubeFilter[2];
+  DCFilter m_DryFilter[2];
+  DCFilter m_DryFilterPre[2];
+  AutoGainer m_AutoGain;
+  std::vector<Channel> m_PreBuffer;
 };
 } // namespace VSTZ

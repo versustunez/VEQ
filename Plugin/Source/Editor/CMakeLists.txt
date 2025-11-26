@@ -1,6 +1,5 @@
 add_sources(
         dBMeter.cpp
-        DriveMeter.cpp
         Logo.cpp
         EQUI.cpp
         Spectrum.cpp

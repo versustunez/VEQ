@@ -12,6 +12,8 @@ public:
 
   void Handle(Events::Event *event) override;
 
+  void update() const;
+
 protected:
   Band *m_Band;
 };

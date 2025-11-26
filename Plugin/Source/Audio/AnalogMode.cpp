@@ -1,7 +1,8 @@
 #include "AnalogMode.h"
 
+#include "Utils/Audio.h"
+
 #include <JuceHeader.h>
-#include <cmath>
 
 namespace VSTZ {
 
@@ -9,70 +10,57 @@ static double lerp(const double a, const double b, const double alpha) {
   return a + alpha * (b - a);
 }
 
-AnalogChannel AnalogMode::Apply(const double inLeft,
-                                             const double inRight,
-                                             size_t index) {
-  DriveTarget.Update();
-  const double drive = DriveTarget.GetDrive();
-  const double reduction = DriveTarget.GetDriveReduction();
-  return {lerp(inLeft,
-               Tube(m_BufferLeft[index], drive, reduction),
-               m_DistortionAmount),
-          lerp(inRight,
-               Tube(m_BufferRight[index], drive, reduction),
-               m_DistortionAmount)};
-}
-
-void AnalogMode::Resize(const size_t maxSize) {
-  m_BufferLeft.resize(maxSize);
-  m_BufferRight.resize(maxSize);
-}
-
-void AnalogMode::SetupFilter(const double sR) {
-  m_AnalogFilter.SetSampleRate(sR);
-  m_AnalogFilter.SetFilterType(Filter::Type::LowPass);
-  // the AnalogFilter needs to cut to avoid Aliasing ;)
-  m_AnalogFilter.CalculateCoefficients(48.0, 500, 0.707);
+Channel AnalogMode::Apply(const double inLeft, const double inRight, double drive) {
+  return {
+      Tube(inLeft, 0, drive),
+      Tube(inRight, 1, drive),
+  };
 }
 
 void AnalogMode::CalculateWarmEffect(const float value) {
-  m_DistortionAmount = lerp(0.01, 0.3, value);
+  m_DistortionAmount = value;
 }
-void AnalogMode::SetVoltage(float value) {
-  m_Voltage = lerp(100, 300, value);
-}
+void AnalogMode::SetVoltage(float value) { m_Voltage = lerp(100, 300, value); }
 void AnalogMode::PreProcess(const std::vector<Channel> &buffer, size_t size) {
   m_CurrentProvidedSamples = size;
-  for (int i = 0; i < m_CurrentProvidedSamples; ++i) {
-    auto &buf = buffer[i];
-    m_BufferLeft[i] = m_AnalogFilter.ApplyLeft(buf.Left);
-    m_BufferRight[i] = m_AnalogFilter.ApplyRight(buf.Right);
+  for (size_t i = 0; i < m_CurrentProvidedSamples; i++) {
+    m_PreBuffer[i] = {
+        m_DryFilterPre[0].Process(buffer[i].Left),
+        m_DryFilterPre[1].Process(buffer[i].Right),
+    };
   }
-  DriveTarget.CalculateDrive(m_BufferLeft.data(), m_BufferRight.data(),
-                             m_CurrentProvidedSamples);
-  for (int i = 0; i < m_CurrentProvidedSamples; ++i) {
-    auto &buf = buffer[i];
-    auto [Left, Right] = Apply(buf.Left, buf.Right, i);
-    m_BufferLeft[i] = Left;
-    m_BufferRight[i] = Right;
+  m_AutoGain.providePreSamples(m_PreBuffer, size);
+}
+
+void AnalogMode::SetSampleRate(double sampleRate) {
+  m_AutoGain.setSampleRate(sampleRate);
+  constexpr size_t numChannels = 2;
+  for (size_t i = 0; i < numChannels; i++) {
+    m_DryFilterPre[i].SetSampleRate(sampleRate);
+    m_DryFilter[i].SetSampleRate(sampleRate);
+    m_TubeFilter[i].SetSampleRate(sampleRate);
+  }
+}
+void AnalogMode::SetBufferSize(size_t size) { m_PreBuffer.resize(size); }
+void AnalogMode::PostProcess(std::vector<Channel> &buffer, size_t size) {
+  m_AutoGain.providePostSamples(buffer, size);
+  for (size_t i = 0; i < size; i++) {
+    Channel red = m_AutoGain.gainReduction();
+    buffer[i] *= red;
   }
 }
 
-double AnalogMode::Tube(double in, double drive, double reduction) const {
-  const double mu = 70.0;
-  const double kp = 600.0;
-  const double kg1 = 1060.0;
-  const double ex = 1.4;
-  constexpr double inVolt = 5.0;
-  constexpr double outVolt = (1.0 / inVolt) / 1000;
-
-
-  const double vgk = in * inVolt * drive;
-
-  double term = abs(vgk + m_Voltage / mu);
-  double res = kp * pow(term / (1.0 + (term / kg1)), ex);
-
-  return res * outVolt  * (vgk < 0 ? -1 : 1) * reduction;
+double AnalogMode::Tube(double in, size_t index, double drive) {
+  double x = in * drive;
+  double bias = m_Voltage / 500.0;
+  double shifted = x - bias;
+  double term = shifted;
+  double y = term + 0.1 * term*term - 0.05 * term*term*term;
+  y *= 0.8;
+  y += 0.03 * term * fabs(term);
+  y = m_TubeFilter[index].Process(y);
+  double dry = m_DryFilter[index].Process(in);
+  return dry + y * m_DistortionAmount;
 }
 
 } // namespace VSTZ
