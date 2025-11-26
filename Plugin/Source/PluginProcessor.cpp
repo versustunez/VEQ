@@ -3,6 +3,7 @@
 #include "Core/Config.h"
 #include "Core/Instance.h"
 #include "PluginEditor.h"
+#include "Utils/Audio.h"
 
 #include <FMT.h>
 #include <algorithm>
@@ -20,16 +21,18 @@ VSTProcessor::VSTProcessor()
   instance->Processor = this;
   VSTZ::Core::Config::get().registerProcessor(m_Id, this);
   m_Parameters.Bypass = instance->handler->GetParameter("bypass");
-  m_Parameters.AutoGain = instance->handler->GetParameter("auto_gain");
-  m_Parameters.Warmth = instance->handler->GetParameter("analog");
+  m_Parameters.MidSide = instance->handler->GetParameter("mid_side");
   m_Parameters.WarmthEffect =
       instance->handler->GetParameter("analog_strength");
+  m_Parameters.WarmthVoltage =
+      instance->handler->GetParameter("analog_voltage");
+  m_Parameters.Drive = instance->handler->GetParameter("drive");
 
   m_Parameters.WarmthEffect->RegisterChangeFunction(
       [this](const float value) { m_AnalogMode.CalculateWarmEffect(value); });
 
-  m_Parameters.AutoGain->RegisterChangeFunction(
-      [&](double) { CalculateAutoGain(); });
+  m_Parameters.WarmthVoltage->RegisterChangeFunction(
+      [this](const float value) { m_AnalogMode.SetVoltage(value); });
 
   // Set up the Bands Change Listener...
   for (int i = 0; i < Bands; ++i) {
@@ -48,12 +51,49 @@ VSTProcessor::VSTProcessor()
     instance->EventHandler.AddHandler(type, BandListener[i].Get());
     instance->EventHandler.AddHandler(qFactor, BandListener[i].Get());
     instance->EventHandler.AddHandler(gain, BandListener[i].Get());
-
-    FilterBands[i].Gain->RegisterChangeFunction(
-        [this](double) { CalculateAutoGain(); });
   }
-  CalculateAutoGain();
   m_AnalogMode.CalculateWarmEffect(m_Parameters.WarmthEffect->getValue());
+}
+
+static void ProcessWarmth(VSTProcessor &processor) {
+  int active = 1;
+  auto &buffer = processor.Oversampler.GetBuffer();
+  auto &originalBuffer = processor.Oversampler.GetBufferOriginal();
+  for (auto &band : processor.FilterBands) {
+    auto &filter = band.ApplyingFilter;
+    if (filter.IsBypassed())
+      continue;
+    active++;
+    for (size_t i = 0; i < processor.Oversampler.GetSize(); i++) {
+      auto element = originalBuffer[i];
+      buffer[i] +=
+          {filter.ApplyLeft(element.Left), filter.ApplyRight(element.Right)};
+    }
+  }
+
+  const double gainReduction = (1.0 / active);
+  const bool midSide = processor.GetParameters().MidSide;
+  auto drive = VSTZ::AudioUtils::DecibelToGain(processor.GetParameters().Drive->getValue());
+  auto& smoother = processor.m_driveSmoother;
+
+  if (midSide) {
+    for (auto &element : processor.Oversampler) {
+      auto pre = element.midSide();
+      auto output =
+          processor.m_AnalogMode
+              .Apply(pre.Left * gainReduction, pre.Right * gainReduction, smoother.Get(drive))
+              .midSide();
+      element.Left = output.Left;
+      element.Right = output.Right;
+    }
+  } else {
+    for (auto &element : processor.Oversampler) {
+      auto output = processor.m_AnalogMode.Apply(
+          element.Left * gainReduction, element.Right * gainReduction, smoother.Get(drive));
+      element.Left = output.Left;
+      element.Right = output.Right;
+    }
+  }
 }
 
 template <typename T>
@@ -67,21 +107,21 @@ static void ProcessBlock(juce::AudioBuffer<T> &buffer,
 
   processor.m_CurrentSamples = buffer.getNumSamples();
   for (size_t i = 0; i < processor.m_CurrentSamples; ++i) {
-    auto &buf = processor.Buffer[i];
-    buf.Left = buffer.getSample(0, i);
-    buf.Right = buffer.getSample(1, i);
+    VSTZ::Channel buf = {buffer.getSample(0, i), buffer.getSample(1, i)};
     processor.instance->InputFFT.PushSample((buf.Left + buf.Right) * 0.5f);
   }
 
-  bool warmth = parameters.Warmth->getBool();
-  if (warmth) {
-    processor.m_AnalogMode.PreProcess(processor.Buffer,
-                                      processor.m_CurrentSamples);
-    ProcessWarmth(processor, buffer.getWritePointer(0),
-                  buffer.getWritePointer(1));
-  } else {
-    ProcessNormal(processor, buffer.getWritePointer(0),
-                  buffer.getWritePointer(1));
+  processor.Oversampler.Up(buffer);
+  processor.m_AnalogMode.PreProcess(processor.Oversampler.GetBuffer(),
+                                    processor.m_CurrentSamples);
+  ProcessWarmth(processor);
+  processor.m_AnalogMode.PostProcess(processor.Oversampler.GetBuffer(),
+                                     processor.m_CurrentSamples);
+  processor.Oversampler.Down(buffer);
+
+  for (size_t i = 0; i < processor.m_CurrentSamples; ++i) {
+    VSTZ::Channel buf = {buffer.getSample(0, i), buffer.getSample(1, i)};
+    processor.instance->OutputFFT.PushSample((buf.Left + buf.Right) * 0.5f);
   }
 
   if (processor.instance->InputFFT.IsDirty()) {
@@ -117,8 +157,7 @@ void VSTProcessor::setStateInformation(const void *data, int sizeInBytes) {
   std::unique_ptr xmlState(getXmlFromBinary(data, sizeInBytes));
   if (xmlState == nullptr)
     return;
-  auto *parameters = xmlState->getChildByName(m_TreeState.state.getType());
-  if (parameters)
+  if (auto *parameters = xmlState->getChildByName(m_TreeState.state.getType()))
     m_TreeState.replaceState(juce::ValueTree::fromXml(*parameters));
 }
 
@@ -131,15 +170,16 @@ void VSTProcessor::prepareToPlay(double sampleRate, int samples) {
   auto &config = VSTZ::Core::Config::get();
   // IT'S OKAY BECAUSE THEY ARE LIKELY TO NOT CHANGE OR BE INTEGERS AT ALL.
   if ((int)config.sampleRate != (int)sampleRate) {
-    config.sampleRate = sampleRate;
+    config.sampleRate = sampleRate * 2;
+    Oversampler.SetupFilter(sampleRate);
   }
   for (auto &band : FilterBands) {
-    band.ApplyingFilter.SetSampleRate((float)sampleRate);
+    band.ApplyingFilter.SetSampleRate((float)sampleRate * 2);
   }
-  m_AnalogMode.Resize(samples);
-  m_AnalogMode.SetupFilter(sampleRate);
-
-  Buffer.resize(samples);
+  Oversampler.SetupMaxSamples(samples);
+  m_AnalogMode.SetBufferSize(samples * 2); // oversampling
+  m_AnalogMode.SetSampleRate(sampleRate * 2);
+  m_driveSmoother.SetSampleRate(sampleRate * 2);
 }
 bool VSTProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
   if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::disabled() ||
@@ -156,76 +196,6 @@ bool VSTProcessor::supportsDoublePrecisionProcessing() const { return true; }
 void VSTProcessor::processBlock(juce::AudioBuffer<double> &buffer,
                                 juce::MidiBuffer &) {
   ProcessBlock(buffer, *this);
-}
-
-void VSTProcessor::CalculateAutoGain() {
-  if (!m_Parameters.AutoGain->getBool()) {
-    m_AutoGainValue = 1.0;
-    return;
-  }
-  double dB = 0;
-  int active = 1;
-  for (auto &FilterBand : FilterBands) {
-    if (!FilterBand.ApplyingFilter.IsBypassed()) {
-      dB = std::max(dB, FilterBand.Gain->getValue());
-      active++;
-    }
-  }
-  dB /= active;
-  m_AutoGainValue = std::pow(10.0f, (float)-dB / 20.0f);
-}
-
-template <typename T>
-static void ProcessWarmth(VSTProcessor &processor, T *leftBuffer,
-                          T *rightBuffer) {
-  auto &analog = processor.m_AnalogMode;
-  int active = 1;
-  for (auto &band : processor.FilterBands) {
-    auto &filter = band.ApplyingFilter;
-    if (filter.IsBypassed())
-      continue;
-    active++;
-    for (int i = 0; i < processor.m_CurrentSamples; ++i) {
-      leftBuffer[i] +=
-          static_cast<float>(filter.ApplyLeft(analog.m_BufferLeft[i]));
-      rightBuffer[i] +=
-          static_cast<float>(filter.ApplyRight(analog.m_BufferRight[i]));
-    }
-  }
-
-  const double gainReduction = (1.0 / active) * processor.m_AutoGainValue;
-  for (int i = 0; i < processor.m_CurrentSamples; ++i) {
-    auto val = analog.ApplyPost(leftBuffer[i] * gainReduction,
-                                rightBuffer[i] * gainReduction);
-    leftBuffer[i] = val.Left;
-    rightBuffer[i] = val.Right;
-    processor.instance->OutputFFT.PushSample((leftBuffer[i] + rightBuffer[i]) *
-                                             0.5f);
-  }
-}
-template <typename T>
-static void ProcessNormal(VSTProcessor &processor, T *leftBuffer,
-                          T *rightBuffer) {
-  int active = 1;
-  for (auto &band : processor.FilterBands) {
-    auto &filter = band.ApplyingFilter;
-    if (filter.IsBypassed())
-      continue;
-    active++;
-    for (int i = 0; i < processor.m_CurrentSamples; ++i) {
-      auto &el = processor.Buffer[i];
-      leftBuffer[i] += filter.ApplyLeft(el.Left);
-      rightBuffer[i] += filter.ApplyRight(el.Right);
-    }
-  }
-
-  const double gainReduction = (1.0 / active) * processor.m_AutoGainValue;
-  for (int i = 0; i < processor.m_CurrentSamples; ++i) {
-    leftBuffer[i] *= gainReduction;
-    rightBuffer[i] *= gainReduction;
-    processor.instance->OutputFFT.PushSample((leftBuffer[i] + rightBuffer[i]) *
-                                             0.5f);
-  }
 }
 
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {

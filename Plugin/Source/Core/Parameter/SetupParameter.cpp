@@ -13,7 +13,10 @@ void ParameterHandler::SetupParameter() {
     return juce::String(value, 2) + " dB";
   };
   constexpr auto percentCB = [](const float value, float) -> juce::String {
-    return juce::String(value * 100, 2) + "%";
+    return juce::String(value * 100, 1) + "%";
+  };
+  constexpr auto voltageCB = [](const float value, float) -> juce::String {
+    return juce::String(value, 1) + "V";
   };
   constexpr auto typeCB = [](const float value, float) -> juce::String {
     switch (static_cast<int>(value)) {
@@ -56,13 +59,24 @@ void ParameterHandler::SetupParameter() {
          }});
   }
   AddBoolParameter("bypass", "Bypass", false);
-  AddBoolParameter("auto_gain", "Auto Gain", false);
-  AddBoolParameter("analog", "Analog", false);
+  AddBoolParameter("mid_side", "Mid/Side", false);
   AddParameter({.Name = "analog_strength",
                 .View = "Analog Strength",
-                .Min = 0.01,
+                .Min = 0.0,
                 .Max = 1.0,
                 .Value = 0.25,
                 .ValueToStringCallback = percentCB});
+  AddParameter({.Name = "analog_voltage",
+                .View = "Voltage",
+                .Min = 100,
+                .Max = 300,
+                .Value = 230,
+                .ValueToStringCallback = voltageCB});
+  AddParameter({.Name = "drive",
+              .View = "Drive",
+              .Min = -30.0,
+              .Max = 30.0,
+              .Value = 0.0,
+              .ValueToStringCallback = decibelCB});
 }
 } // namespace VSTZ::Core

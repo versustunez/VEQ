@@ -6,45 +6,45 @@ namespace VSTZ {
 struct Channel {
   double Left{0.0};
   double Right{0.0};
-  double GetMax() { return std::max(Left, Right); }
-  double GetMin() { return std::min(Left, Right); }
-  double GetMaxAbs() { return std::max(std::abs(Left), std::abs(Right)); }
-  Channel operator*=(const Channel &other) {
-    Left *= other.Left;
-    Right *= other.Right;
-    return *this;
-  }
-  Channel operator+=(const Channel &other) {
-    Left += other.Left;
-    Right += other.Right;
-    return *this;
-  }
-  Channel operator/=(const float other) {
-    Left /= other;
-    Right /= other;
-    return *this;
-  }
-  Channel operator*=(double other) {
-    Left *= other;
-    Right *= other;
-    return *this;
-  }
-  Channel operator+=(double other) {
-    Left += other;
-    Right += other;
-    return *this;
-  }
-  Channel operator-(const Channel &other) const {
-    return {Left - other.Left, Right - other.Right};
-  }
-  Channel operator*(const Channel &other) const {
-    return {Left * other.Left, Right * other.Right};
-  }
+  double GetMax() const;
+  double GetMin() const;
+  double GetMaxAbs() const;
+  Channel operator*=(const Channel &other);
+  Channel operator+=(const Channel &other);
+  Channel operator/=(float other);
+  Channel operator*=(double other);
+  Channel operator+=(double other);
+  Channel operator-(const Channel &other) const;
+  Channel operator*(const Channel &other) const;
+  Channel operator*(const double &other) const;
+  [[nodiscard]] Channel toGain() const;
+  [[nodiscard]] Channel toDecibels() const;
+  [[nodiscard]] Channel midSide() const;
 };
 
 struct InOut {
   double InL{0}, OutL{0};
   double InR{0}, OutR{0};
+};
+
+struct Smoother {
+  double Previous{0};
+  double Coeff{0};
+
+  void setInitial(double value);
+  double Get(double in);
+  void SetSampleRate(double sampleRate);
+};
+
+struct DCFilter {
+
+  double Process(double in);
+  void SetSampleRate(double sampleRate);
+
+private:
+  double m_In = 0.0;
+  double m_Out = 0.0;
+  double R = 0.9995;
 };
 
 } // namespace VSTZ
